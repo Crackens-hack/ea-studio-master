@@ -40,15 +40,31 @@ def load_reports_root(repo_root: Path) -> Path:
 
 
 def _to_number(val):
-    if val is None:
-        return None
-    if isinstance(val, (int, float)):
-        return val
+    if val is None or val == "N/A": return None
+    if isinstance(val, (int, float)): return val
     s = str(val).replace(" ", "").replace("%", "").replace(",", "")
-    try:
-        return float(s)
-    except ValueError:
-        return None
+    match = re.search(r"([-\d\.]+)", s)
+    if match:
+        try: return float(match.group(1))
+        except: return None
+    return None
+
+def _parse_dual_value(val):
+    """Retorna (valor_numerico, porcentaje) o (None, None)"""
+    if not val or val == "N/A": return None, None
+    s = str(val).replace(" ", "").replace(",", "")
+    # Caso 1: 2122.57(37.17%) o 2.60(99.07%)
+    m1 = re.search(r"([-\d\.]+)\(([-\d\.]+)%?\)", s)
+    if m1:
+        try: return float(m1.group(1)), float(m1.group(2))
+        except: pass
+    # Caso 2: 37.17%(2122.57) - Inverso
+    m2 = re.search(r"([-\d\.]+)%\(([-\d\.]+)\)", s)
+    if m2:
+        try: return float(m2.group(2)), float(m2.group(1))
+        except: pass
+    # Fallback
+    return _to_number(val), None
 
 
 # ------------------ Paso 1: XML -> CSV ------------------ #
@@ -275,6 +291,7 @@ def generar_markdown(resumen_set: dict, res: dict, inputs: str) -> str:
 
 ## 💰 RENDIMIENTO FINANCIERO
 *   **Beneficio Neto Total:** $ **{res['Net Profit']}**
+*   **Balance Final:** $ **{res.get('Balance Final', 'N/A')}**
 *   **Beneficio Bruto:** $ {res['Gross Profit']} | **Pérdida Bruta:** $ {res['Gross Loss']}
 *   **Profit Factor:** **{res['Profit Factor']}** | **Expected Payoff:** {res['Expected Payoff']}
 *   **Sharpe Ratio:** {res['Sharpe Ratio']} | **Recovery Factor:** {res['Recovery Factor']}
@@ -348,14 +365,19 @@ MAPEO_ESPANOL = {
     "sharpe": "Ratio Sharpe",
     "expected_payoff": "Pago Esperado",
     "net_profit": "Beneficio Neto",
+    "balance_final": "Balance Final",
     "gross_profit": "Beneficio Bruto",
     "gross_loss": "Pérdida Bruta",
     "balance_dd_abs": "DD Balance Absoluto",
-    "balance_dd_max": "DD Balance Máximo",
-    "balance_dd_rel": "DD Balance Relativo",
+    "balance_dd_max_usd": "DD Balance Máximo ($)",
+    "balance_dd_max_pct": "DD Balance Máximo (%)",
+    "balance_dd_rel_pct": "DD Balance Relativo (%)",
+    "balance_dd_rel_usd": "DD Balance Relativo ($)",
     "equity_dd_abs": "DD Equidad Absoluto",
-    "equity_dd_max": "DD Equidad Máximo",
-    "equity_dd_rel": "DD Equidad Relativo",
+    "equity_dd_max_usd": "DD Equidad Máximo ($)",
+    "equity_dd_max_pct": "DD Equidad Máximo (%)",
+    "equity_dd_rel_pct": "DD Equidad Relativo (%)",
+    "equity_dd_rel_usd": "DD Equidad Relativo ($)",
     "total_trades": "Total de Operaciones",
     "total_deals": "Total de Tratos",
     "profit_trades_count": "Op Rentables (Cantidad)",
@@ -387,9 +409,12 @@ MAPEO_ESPANOL = {
     "hold_max": "Tiempo Retención Máximo",
     "hold_avg": "Tiempo Retención Promedio",
     "on_tester": "Resultado OnTester",
-    "z_score": "Z-Score",
-    "ahpr": "AHPR",
-    "ghpr": "GHPR",
+    "z_score_val": "Z-Score (Valor)",
+    "z_score_pct": "Z-Score (%)",
+    "ahpr_val": "AHPR (Valor)",
+    "ahpr_pct": "AHPR (%)",
+    "ghpr_val": "GHPR (Valor)",
+    "ghpr_pct": "GHPR (%)",
     "lr_corr": "Correlación LR",
     "lr_std_err": "Error Estándar LR",
     "margin_level": "Nivel de Margen (%)"
@@ -427,6 +452,12 @@ def run_htm(repo_root: Path):
     for htm in htm_files:
         try:
             resumen_set, res, inputs = cargar_reporte(htm)
+            # Balance Final para MD y CSV
+            dep_ini = _to_number(resumen_set.get("Initial Deposit"))
+            ben_net = _to_number(res.get("Net Profit"))
+            bal_fin = (dep_ini + ben_net) if (dep_ini is not None and ben_net is not None) else None
+            res["Balance Final"] = f"{bal_fin:,.2f}" if bal_fin is not None else "N/A"
+
             md = generar_markdown(resumen_set, res, inputs)
             rel = htm.relative_to(rep_root)
             session_name = rel.parent.name
@@ -457,6 +488,17 @@ def run_htm(repo_root: Path):
             period_range = period_parts[0] if period_parts else ""
             period_from, period_to = (period_range.split(" - ") + [None, None])[:2] if period_range else (None, None)
 
+            # Parseo de duales para el CSV
+            bal_max_usd, bal_max_pct = _parse_dual_value(res.get("DD Bal Max"))
+            bal_rel_usd, bal_rel_pct = _parse_dual_value(res.get("DD Bal Rel"))
+            eq_max_usd, eq_max_pct   = _parse_dual_value(res.get("DD Eq Max"))
+            eq_rel_usd, eq_rel_pct   = _parse_dual_value(res.get("DD Eq Rel"))
+            z_v, z_p                 = _parse_dual_value(res.get("Z-Score"))
+            ahpr_v, ahpr_p           = _parse_dual_value(res.get("AHPR"))
+            ghpr_v, ghpr_p           = _parse_dual_value(res.get("GHPR"))
+
+            # (bal_fin ya calculado arriba)
+
             flat = {
                 "expert": resumen_set.get("Expert"),
                 "symbol": resumen_set.get("Symbol"),
@@ -476,14 +518,19 @@ def run_htm(repo_root: Path):
                 "sharpe": res.get("Sharpe Ratio"),
                 "expected_payoff": res.get("Expected Payoff"),
                 "net_profit": res.get("Net Profit"),
+                "balance_final": bal_fin,
                 "gross_profit": res.get("Gross Profit"),
                 "gross_loss": res.get("Gross Loss"),
                 "balance_dd_abs": res.get("DD Bal Abs"),
-                "balance_dd_max": res.get("DD Bal Max"),
-                "balance_dd_rel": res.get("DD Bal Rel"),
+                "balance_dd_max_usd": bal_max_usd,
+                "balance_dd_max_pct": bal_max_pct,
+                "balance_dd_rel_pct": bal_rel_pct,
+                "balance_dd_rel_usd": bal_rel_usd,
                 "equity_dd_abs": res.get("DD Eq Abs"),
-                "equity_dd_max": res.get("DD Eq Max"),
-                "equity_dd_rel": res.get("DD Eq Rel"),
+                "equity_dd_max_usd": eq_max_usd,
+                "equity_dd_max_pct": eq_max_pct,
+                "equity_dd_rel_pct": eq_rel_pct,
+                "equity_dd_rel_usd": eq_rel_usd,
                 "total_trades": res.get("Total Trades"),
                 "total_deals": res.get("Total Deals"),
                 "profit_trades_count": profit_trades[0] if isinstance(profit_trades, tuple) else profit_trades,
@@ -515,9 +562,12 @@ def run_htm(repo_root: Path):
                 "hold_max": res.get("Max Hold"),
                 "hold_avg": res.get("Avg Hold"),
                 "on_tester": res.get("OnTester"),
-                "z_score": res.get("Z-Score"),
-                "ahpr": res.get("AHPR"),
-                "ghpr": res.get("GHPR"),
+                "z_score_val": z_v,
+                "z_score_pct": z_p,
+                "ahpr_val": ahpr_v,
+                "ahpr_pct": ahpr_p,
+                "ghpr_val": ghpr_v,
+                "ghpr_pct": ghpr_p,
                 "lr_corr": res.get("LR Correlation"),
                 "lr_std_err": res.get("LR Std Error"),
                 "margin_level": res.get("Margin Level"),

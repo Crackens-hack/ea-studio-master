@@ -412,7 +412,7 @@ Write-Host "Reporte: $report"
 if($mode.fragmentation){
     
     Write-Host ""
-    Write-Host ">>> ACTIVADA FRAGMENTACIÓN TEMPORAL (Auditoría Anual)" -ForegroundColor Yellow
+    Write-Host ">>> ACTIVADA FRAGMENTACION TEMPORAL (Auditoria Anual)" -ForegroundColor Yellow
     
     # Extraer años del rango (ej. _10años -> 10)
     $yearsNum = 1
@@ -427,7 +427,7 @@ if($mode.fragmentation){
         $iterFrom = $baseToDate.AddYears(-($i+1)).ToString("yyyy.MM.dd")
         
         $iterYear = $baseToDate.AddYears(-$i).Year
-        $iterReport = $report + "_AÑO_" + $iterYear
+        $iterReport = $report + "_ANYO_" + $iterYear
         
         # Clonar INI con fechas e informe de la iteración
         $iterIni = $ini
