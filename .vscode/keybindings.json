@@ -1,0 +1,72 @@
+[
+  {
+    "key": "alt+d alt+d",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "powershell -ExecutionPolicy Bypass -File 00_setup/Desinstalador.ps1\r"
+    }
+  },
+  {
+    "key": "alt+i alt+i",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "powershell -ExecutionPolicy Bypass -File 00_setup/Instalador.ps1\r"
+    }
+  },
+  {
+    "key": "alt+j alt+j",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "powershell -ExecutionPolicy Bypass -File 00_Jefe-Activa.ps1\r"
+    }
+  },
+  {
+    "key": "alt+t alt+t",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "powershell -ExecutionPolicy Bypass -File 02_M-Tester.ps1\r"
+    }
+  },
+  {
+    "key": "alt+c alt+c",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "powershell -ExecutionPolicy Bypass -File 01_Compilador.ps1\r"
+    }
+  },
+  {
+    "key": "alt+r alt+r",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "powershell -ExecutionPolicy Bypass -File 03_Recompilador.ps1\r"
+    }
+  },
+  {
+    "key": "alt+n alt+n",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "python Tools/script/A_Normalizador_Master.py\r"
+    }
+  },
+  {
+    "key": "alt+a alt+a",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "python Tools/script/B_Analista_Elite.py\r"
+    }
+  },
+  {
+    "key": "alt+v alt+v",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": ". ./00_Active_VENV.ps1\r"
+    }
+  },
+  {
+    "key": "alt+l alt+l",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "powershell -ExecutionPolicy Bypass -File 04_LauncherPortable.ps1\r"
+    }
+  }
+]

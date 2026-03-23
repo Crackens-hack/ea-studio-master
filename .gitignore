@@ -9,7 +9,6 @@ MQL5/Files/
 
 Compilacion/logs
 .venv
-.vscode/
 RESULTADOS/
 
 # Ignorar el contenido de las carpetas BUILD
