@@ -1,0 +1,20 @@
+;archivo de configuracion
+;preset creado por agentes
+;Pass 1446 - Winner and Stable (BT $562 - FW $1575)
+InpRiskSniper=1.8||1.8||0.1||10.0||N
+InpSL_Mult=8.3||8.3||0.5||10.0||Y
+InpTP_Mult=5.4||5.4||1.0||20.0||Y
+InpBE_Trigger_Mult=3.6||3.6||0.5||5.0||Y
+InpRiskMaximizer=0.5||0.5||0.1||5.0||N
+InpTrailing_Mult=6.3||6.3||0.5||10.0||Y
+InpTimeOutSniper=112||112||0||168||Y
+InpTimeOutMaximizer=351||351||0||500||Y
+InpMagic=2026312||2026312||1||9999999||N
+InpDebug=true||true||0||false||N
+InpEMAPeriod=140||140||10||500||N
+InpFractalBars=85||85||10||200||N
+InpATRPeriod=14||14||5||50||N
+InpATRMultiplier=0.4||0.4||0.1||2.0||N
+InpWriteAudit=false||false||0||false||N
+InpHangingHours=24||24||1||168||N
+InpVisualDebug=false||false||0||false||N

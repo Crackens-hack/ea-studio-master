@@ -1,0 +1,20 @@
+;preset creado por agentes (siempre poner eso aunque sea la primera vez que vos como agente le crees el preset)
+InpSymbol=
+; Timeframe en entero MT5 (ej. H1=16385). Aquí fijo
+InpTF=16385||16385||0||16385||N
+
+; Numéricos optimizables
+InpRiskPerTradePct=1.0||0.25||0.25||2.00||Y
+InpFastEMA=21||10||5||40||Y
+InpSlowEMA=55||40||5||120||Y
+InpBreakoutPeriod=50||20||5||80||Y
+InpATRPeriod=14||10||2||28||Y
+InpATR_SL_Mult=1.6||1.0||0.10||2.50||Y
+InpATR_TP_Mult=3.0||2.0||0.20||4.00||Y
+InpUseTrailing=true||false||0||true||Y
+InpTrailATRMult=1.0||0.50||0.25||2.00||Y
+
+; Parámetros fijos
+InpMaxSpreadPips=2.5||2.5||0.0||2.5||N
+InpSlippagePoints=5||5||0||5||N
+InpMagic=24032026||24032026||1||24032026||N

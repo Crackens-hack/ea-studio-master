@@ -1,0 +1,23 @@
+;archivo de configuracion
+;Pass 526 - El Elitista (Sniper puro)
+InpRiskSniper=3.1
+InpSL_Mult=8.0
+InpTP_Mult=20.0
+InpBE_Trigger_Mult=1.0
+InpRiskMaximizer=1.7
+InpTrailing_Mult=4.0
+InpTimeOutSniper=72
+InpTimeOutMaximizer=168
+InpMagic=526
+InpDebug=false
+InpEMAPeriod=120
+InpFractalBars=185
+InpATRPeriod=19
+InpATRMultiplier=0.7
+InpSlopeLookback=10
+InpSlopeMin=0.20
+InpMaxSpread=45
+InpATRMin=0.0010
+InpWriteAudit=false
+InpHangingHours=24
+InpVisualDebug=true

@@ -1,0 +1,23 @@
+;archivo de configuracion
+;Pass 5174 - El Equilibrado
+InpRiskSniper=1.1
+InpSL_Mult=9.0
+InpTP_Mult=5.0
+InpBE_Trigger_Mult=3.5
+InpRiskMaximizer=1.2
+InpTrailing_Mult=4.5
+InpTimeOutSniper=24
+InpTimeOutMaximizer=360
+InpMagic=5174
+InpDebug=false
+InpEMAPeriod=330
+InpFractalBars=130
+InpATRPeriod=20
+InpATRMultiplier=1.5
+InpSlopeLookback=15
+InpSlopeMin=0.15
+InpMaxSpread=30
+InpATRMin=0.0008
+InpWriteAudit=false
+InpHangingHours=24
+InpVisualDebug=true

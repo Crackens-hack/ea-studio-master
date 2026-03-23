@@ -1,0 +1,13 @@
+;archivo de configuracion
+InpRiskSniper=1.8||0.5||0.1||5.0||Y
+InpSL_Pips=42||20||2||100||Y
+InpImaginaryTP=86||40||5||200||Y
+InpTrailingTrigger=0.40||0.20||0.05||0.80||Y
+InpRiskMaximizer=0.5||0.1||0.1||2.0||Y
+InpTrailingStep=34||10||5||80||Y
+InpMagic=2026312||0||0||0||N
+InpDebug=true||true||0||false||N
+InpEMAPeriod=140||50||10||300||Y
+InpFractalBars=85||20||5||200||Y
+InpATRPeriod=14||5||1||50||Y
+InpATRMultiplier=0.4||0.1||0.1||2.0||Y

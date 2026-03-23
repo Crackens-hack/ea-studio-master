@@ -1,0 +1,24 @@
+00_setup/Instancias/
+000_SETERS/
+*.dll
+.env
+*.log
+.000_*_hub_000/
+MQL5/Logs/
+MQL5/Files/
+
+Compilacion/logs
+.venv
+.vscode/
+RESULTADOS/
+
+# Ignorar el contenido de las carpetas BUILD
+BUILD/01_ea_construccion/*
+BUILD/02_ea_mejorar/*
+BUILD/04_ARCHIVADOS/*
+
+# EXCEPCIÓN: No ignorar los archivos .gitkeep para que la carpeta se mantenga en Git
+!BUILD/01_ea_construccion/.gitkeep
+!BUILD/02_ea_mejorar/.gitkeep
+!BUILD/03_PORTAFOLIO/.gitkeep
+!BUILD/04_ARCHIVADOS/.gitkeep

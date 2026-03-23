@@ -1,0 +1,31 @@
+{
+  "csv": {
+    "min_trades_fitness": 15,
+    "min_trades_volume": 30,
+    "top_n": 5,
+    "top_pct": 0.1,
+    "min_profit": 0.0,
+    "min_pf": 1.0,
+    "max_dd_pct": 25.0,
+    "min_forward_ratio": 0.7,
+    "sort_back": "Result",
+    "sort_forward": "Forward Result"
+  },
+  "json": {
+    "min_trades": 50,
+    "min_pf": 1.2,
+    "min_rf": 1.0,
+    "max_dd_pct": 25.0,
+    "min_net_profit": 0.0,
+    "min_winrate": 50.0,
+    "max_consec_loss_trades": 12,
+    "score": {
+      "pf_weight": 0.35,
+      "rf_weight": 0.25,
+      "winrate_weight": 0.15,
+      "payoff_weight": 0.15,
+      "dd_penalty": 0.10
+    },
+    "top_n": 5
+  }
+}

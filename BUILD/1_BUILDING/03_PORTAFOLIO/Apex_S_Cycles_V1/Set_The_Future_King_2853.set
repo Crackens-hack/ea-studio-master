@@ -1,0 +1,12 @@
+InpRiskSniper=1.8
+InpSL_Pips=42
+InpImaginaryTP=86
+InpTrailingTrigger=0.40
+InpRiskMaximizer=0.5
+InpTrailingStep=34
+InpMagic=2026312
+InpDebug=1
+InpEMAPeriod=140
+InpFractalBars=85
+InpATRPeriod=14
+InpATRMultiplier=0.4
