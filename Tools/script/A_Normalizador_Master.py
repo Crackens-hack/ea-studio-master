@@ -461,19 +461,31 @@ def run_htm(repo_root: Path):
             md = generar_markdown(resumen_set, res, inputs)
             rel = htm.relative_to(rep_root)
             session_name = rel.parent.name
-            full_stem = rel.stem
+            full_stem = htm.stem
             
-            # Extraer el nombre del EA quitando el nombre de la sesión
-            # Esto evita carpetas con nombres kilométricos
-            ea_name = full_stem.replace(f"_{session_name}", "")
+            # Identificar nombre de EA y si es modo fragmentado
+            ea_expert_name = resumen_set.get("Expert", "EA_Desconocido")
+            is_fragmented  = "fragmentado" in session_name.lower()
             
-            # Carpeta dedicada corta para este reporte específico
-            report_dir = out_root / rel.parent / ea_name
+            # Extracción del nombre base del EA para la carpeta (remover el nombre de sesión)
+            ea_base_from_file = full_stem.replace(f"_{session_name}", "")
+
+            # Definir carpeta de salida
+            if is_fragmented:
+                # Jerarquía: Modo / EA_Expert / Nombre_Fragmento
+                report_dir = out_root / rel.parent / ea_expert_name / ea_base_from_file
+                ea_file_name = ea_base_from_file
+            else:
+                # Jerarquía estándar: Modo / EA_Base
+                report_dir = out_root / rel.parent / ea_base_from_file
+                ea_file_name = ea_base_from_file
+
             report_dir.mkdir(parents=True, exist_ok=True)
 
-            out_path = report_dir / f"{ea_name}.md"
+            out_path = report_dir / f"{ea_file_name}.md"
             out_path.write_text(md, encoding="utf-8")
-            # JSON limpio para pipelines/filtrado
+
+            # Recuperar métricas individuales para el flat JSON
             profit_trades = res.get("Profit Trades")
             loss_trades   = res.get("Loss Trades")
             short_trades  = res.get("Short Won")
@@ -625,11 +637,11 @@ def run_htm(repo_root: Path):
                 "margin_level_pct": _to_number(res.get("Margin Level")),
             }
 
-            json_path = report_dir / f"{ea_name}.json"
+            json_path = report_dir / f"{ea_file_name}.json"
             json_path.write_text(json.dumps(flat, ensure_ascii=False, indent=2), encoding="utf-8")
             
             # Generar CSV Resumen en español
-            csv_resumen_path = report_dir / f"{ea_name}_resumen.csv"
+            csv_resumen_path = report_dir / f"{ea_file_name}_resumen.csv"
             generar_csv_resumen(flat, csv_resumen_path)
 
             print(f"[OK] {htm} -> {report_dir}")
@@ -643,7 +655,7 @@ def run_htm(repo_root: Path):
                 if img_path.exists():
                     try:
                         # Trasladar con nombre corto y borrar original
-                        target_img = report_dir / f"{ea_name}{sfx}.png"
+                        target_img = report_dir / f"{ea_file_name}{sfx}.png"
                         target_img.write_bytes(img_path.read_bytes())
                         img_path.unlink()
                     except Exception as e_img:
