@@ -63,6 +63,7 @@ function Get-Modes {
             $ranges=@()
             $preset=$false
             $autoNormalizer=$false
+            $fragmentation=$false
 
             foreach($p in $parts){
 
@@ -79,6 +80,10 @@ function Get-Modes {
                 if($p -eq "preset"){
                     $preset=$true
                 }
+
+                if($p -eq "Fragmentacion"){
+                    $fragmentation=$true
+                }
             }
 
             $modes+=[PSCustomObject]@{
@@ -88,6 +93,7 @@ function Get-Modes {
                 ranges=$ranges
                 preset=$preset
                 autoNormalizer=$autoNormalizer
+                fragmentation=$fragmentation
             }
         }
     }
@@ -400,10 +406,50 @@ Write-Host "Rango: $fromDate -> $toDate"
 Write-Host "Reporte: $report"
 
 # -----------------------------------------------------
-# EJECUTAR
+# EJECUCION
 # -----------------------------------------------------
 
-Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
+if($mode.fragmentation){
+    
+    Write-Host ""
+    Write-Host ">>> ACTIVADA FRAGMENTACIÓN TEMPORAL (Auditoría Anual)" -ForegroundColor Yellow
+    
+    # Extraer años del rango (ej. _10años -> 10)
+    $yearsNum = 1
+    if($range.name -match "(\d+)años") { $yearsNum = [int]$matches[1] }
+    elseif($range.name -match "(\d+)año") { $yearsNum = [int]$matches[1] }
+
+    $baseToDate = [datetime]::ParseExact($config["ToDate"],"yyyy.MM.dd",$null)
+
+    for($i=0; $i -lt $yearsNum; $i++){
+        
+        $iterTo = $baseToDate.AddYears(-$i).ToString("yyyy.MM.dd")
+        $iterFrom = $baseToDate.AddYears(-($i+1)).ToString("yyyy.MM.dd")
+        
+        $iterYear = $baseToDate.AddYears(-$i).Year
+        $iterReport = $report + "_AÑO_" + $iterYear
+        
+        # Clonar INI con fechas e informe de la iteración
+        $iterIni = $ini
+        $iterIni = $iterIni | ForEach-Object {
+            if($_ -match "^FromDate="){ "FromDate=$iterFrom" }
+            elseif($_ -match "^ToDate="){ "ToDate=$iterTo" }
+            elseif($_ -match "^Report="){ "Report=$iterReport" }
+            else { $_ }
+        }
+        
+        $iterIni | Set-Content $iniOutput -Encoding UTF8
+        
+        Write-Host ">>> DISPARANDO FRAGMENTO: $iterYear ($iterFrom -> $iterTo)" -ForegroundColor Cyan
+        Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
+        Write-Host ">>> FRAGMENTO $iterYear COMPLETADO." -ForegroundColor Green
+    }
+}
+else {
+    # Ejecución Estándar (Bloque Único)
+    $ini | Set-Content $iniOutput -Encoding UTF8
+    Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
+}
 
 # -----------------------------------------------------
 # AUTO NORMALIZER
