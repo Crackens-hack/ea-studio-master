@@ -449,6 +449,9 @@ def run_htm(repo_root: Path):
         return
 
     ok = 0
+    # Colector para consolidar fragmentos al final
+    colector_fragmentos = {} # (session, ea) -> { "headers": [], "rows": [] }
+
     for htm in htm_files:
         try:
             resumen_set, res, inputs = cargar_reporte(htm)
@@ -587,6 +590,26 @@ def run_htm(repo_root: Path):
                 "inputs_list": [line for line in inputs.splitlines() if line.strip()],
             }
 
+            # Si es fragmentado, guardamos para el consolidado final
+            if is_fragmented:
+                key_colector = (session_name, ea_expert_name)
+                if key_colector not in colector_fragmentos:
+                    # Preparar cabeceras base + inputs dinámicos
+                    cabeceras_full = list(MAPEO_ESPANOL.values())
+                    # Agregar inputs a las cabeceras (asumimos que primer fragmento tiene los inputs representativos)
+                    for inp in flat.get("inputs_list", []):
+                        if "=" in inp:
+                            k_inp = inp.split("=", 1)[0].strip()
+                            cabeceras_full.append(f"Input: {k_inp}")
+                    colector_fragmentos[key_colector] = { "headers": cabeceras_full, "rows": [] }
+                
+                # Construir fila
+                fila = [flat.get(k, "") for k in MAPEO_ESPANOL.keys()]
+                for inp in flat.get("inputs_list", []):
+                    if "=" in inp:
+                        fila.append(inp.split("=", 1)[1].strip())
+                colector_fragmentos[key_colector]["rows"].append(fila)
+
             flat["numeric"] = {
                 "profit_factor": _to_number(res.get("Profit Factor")),
                 "recovery_factor": _to_number(res.get("Recovery Factor")),
@@ -668,6 +691,25 @@ def run_htm(repo_root: Path):
                 pass
         except Exception as e:
             print(f"[ERROR] {htm}: {e}")
+
+    # --- FASE FINAL: Generar Consolidados de Fragmentación ---
+    for (s_name, ea_name), data in colector_fragmentos.items():
+        try:
+            resumen_dir = out_root / s_name / ea_name / "1_RESUMEN"
+            resumen_dir.mkdir(parents=True, exist_ok=True)
+            resumen_file = resumen_dir / "resumen-fragmentacion.csv"
+            
+            # Ordenar filas por Periodo (opcional, pero ayuda a la lectura)
+            filas_ordenadas = sorted(data["rows"], key=lambda x: x[2]) # El índice 2 es "Periodo" en MAPEO_ESPANOL
+            
+            with resumen_file.open("w", newline="", encoding="utf-8-sig") as f:
+                writer = csv.writer(f)
+                writer.writerow(data["headers"])
+                writer.writerows(filas_ordenadas)
+            
+            print(f"[CONSOLIDADO OK] -> {resumen_file}")
+        except Exception as e_cons:
+            print(f"[ERROR CONSOLIDADO] {ea_name}: {e_cons}")
 
     print(f"\n[RESUMEN HTM] {ok}/{len(htm_files)} reportes convertidos. Salida en {out_root}")
 
