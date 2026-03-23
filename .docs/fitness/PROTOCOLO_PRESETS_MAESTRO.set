@@ -1,0 +1,47 @@
+;archivo de configuracion
+;====================================================================
+; 📜 PROTOCOLO MAESTRO DE ARCHIVOS .SET (VERSIÓN ÉLITE V5.4)
+;====================================================================
+; REGLA DE ORO DE UBICACIÓN: 
+; El agente DEBE identificar la instancia activa mediante el Hub Virtual:
+; '.000_<instancia>_hub_000' en el root del repositorio.
+; El guardado debe ser SIMULTÁNEO en:
+; 1. [Hub]/MQL5/Presets/[EA].set
+; 2. [Hub]/MQL5/Profiles/Tester/[EA].set (Mandatorio para M-Tester)
+;====================================================================
+; REGLA DE ORO DE CONTENIDO:
+; 1. El archivo SIEMPRE debe empezar con ';archivo de configuracion'.
+; 2. Revisar OBLIGATORIAMENTE '.docs/fitness/fitness-ontester.md' antes
+;    de definir el bloque de evaluación (OnTester).
+; 3. Todos los inputs deben empezar con 'Inp'.
+; 4. Estructura MT5: 'Variable=Valor||Mínimo||Paso||Máximo||Y|N'
+;====================================================================
+
+; --- BLOQUE DE FITNESS (Sincronía con OnTester V5.4) ---
+; InpTFMode: 0=Alta Frecuencia, 1=Media, 2=Baja. (NUNCA optimizar)
+InpTFMode=1||1||1||0||N
+InpDebug=0||0||0||0||N
+
+; --- CONFIGURACIÓN DE SÍMBOLO Y CUENTA ---
+InpSymbol=
+; Timeframe en entero MT5 (M1=1, M5=5, M15=15, H1=16385, H4=16408, D1=16409)
+InpTF=16385||16385||0||16385||N
+
+; --- PARÁMETROS ESTRATÉGICOS (Ejemplos Optimizables) ---
+; InpVariable=Default||Start||Step||Stop||Y (Y=Optimizar, N=Fijo)
+InpRiskPerTradePct=1.0||0.25||0.25||3.00||Y
+InpFastPeriod=10||10||2||30||Y
+InpSlowPeriod=20||20||5||100||Y
+InpATRPeriod=14||14||0||14||N
+InpATR_Mult=1.5||0.5||0.1||2.5||Y
+
+; --- CONFIGURACIÓN DE RIESGO Y CONTROL ---
+InpMaxSpreadPips=2.5||2.5||0||2.5||N
+InpSlippagePoints=5||5||0||5||N
+InpMagic=20260323||20260323||0||20260323||N
+
+;====================================================================
+; NOTA PARA AGENTES:
+; Antes de crear este .set, asegurate de que el EA lleve incorporado
+; el código de 'OnTester' correspondiente a la teoría de fitness actual.
+;====================================================================
