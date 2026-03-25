@@ -66,21 +66,37 @@ def main():
     for ea_name in ea_folders:
         ea_dir = os.path.join(BASE_DIR, ea_name)
 
-        fw_path = os.path.join(ea_dir, f"{ea_name}_forward_filtered.csv")
-        bt_path = os.path.join(ea_dir, f"{ea_name}_genetic_filtered.csv")
+        # 3. Sensor Inteligente: ¿Vale la pena cruzar?
+        filter_dir = os.path.join(ea_dir, '3_FILTERED_POST_FW')
+        info_path = os.path.join(filter_dir, "resumen_filtrado.txt")
+        
+        pasa_bt = False
+        pasa_fw = False
+        
+        if os.path.exists(info_path):
+            with open(info_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                pasa_bt = "genetic_filtered=YES" in content
+                pasa_fw = "forward_filtered=YES" in content
 
-        # Sin Forward = sin Edge útil
-        if not os.path.exists(fw_path):
-            print(f"\n[SKIP] {ea_name}: falta forward_filtered.csv → sin Edge. Ignorando.")
-            skipped += 1
-            continue
-
-        if not os.path.exists(bt_path):
-            print(f"\n[SKIP] {ea_name}: falta genetic_filtered.csv. Ignorando.")
+        if not pasa_bt or not pasa_fw:
+            print(f"\n[SKIP] {ea_name}: El sensor indica que uno de los periodos está vacío (NO). Saltando cruce.")
+            # Crear carpetas y sensor de NO cruce
+            crossed_dir = os.path.join(ea_dir, '2_CROSSED_DNA')
+            os.makedirs(crossed_dir, exist_ok=True)
+            with open(os.path.join(crossed_dir, "resumen_cruce.txt"), 'w', encoding='utf-8') as f:
+                f.write("dna_crossed=NO (0)\n")
+            # Crear CSVs vacíos (Cabecera mínima de el cruce anterior)
+            pd.DataFrame().to_csv(os.path.join(crossed_dir, f"{ea_name}_genetic_crossed.csv"), index=False)
+            pd.DataFrame().to_csv(os.path.join(crossed_dir, f"{ea_name}_forward_crossed.csv"), index=False)
             skipped += 1
             continue
 
         print(f"\n🔬 Procesando: {ea_name}")
+        
+        # Redefinir rutas de archivos CSV para cargarlos
+        fw_path = os.path.join(filter_dir, f"{ea_name}_forward_filtered.csv")
+        bt_path = os.path.join(filter_dir, f"{ea_name}_genetic_filtered.csv")
 
         # Cargar CSVs
         df_fw = normalize_cols(pd.read_csv(fw_path))
@@ -110,38 +126,45 @@ def main():
             continue
 
         # Intersección real de ADNs (Sets que están en AMBOS)
-        df_bt['_dna'] = df_bt.apply(lambda row: dna_key(row, inp_cols), axis=1)
-        df_fw['_dna'] = df_fw.apply(lambda row: dna_key(row, inp_cols), axis=1)
+        df_bt['dna_key'] = df_bt.apply(lambda row: dna_key(row, inp_cols), axis=1)
+        df_fw['dna_key'] = df_fw.apply(lambda row: dna_key(row, inp_cols), axis=1)
 
-        bt_dna_set = set(df_bt['_dna'])
-        fw_dna_set = set(df_fw['_dna'])
-        common_dna = bt_dna_set.intersection(fw_dna_set)
+        common_dna = set(df_bt['dna_key']).intersection(set(df_fw['dna_key']))
 
-        df_bt_crossed = df_bt[df_bt['_dna'].isin(common_dna)].drop(columns=['_dna']).copy()
-        df_fw_crossed = df_fw[df_fw['_dna'].isin(common_dna)].drop(columns=['_dna']).copy()
+        df_bt_crossed = df_bt[df_bt['dna_key'].isin(common_dna)].copy()
+        df_fw_crossed = df_fw[df_fw['dna_key'].isin(common_dna)].copy()
 
-        if common_dna:
+        if not df_bt_crossed.empty:
             # Asegurar mismo orden por Pass ID o ADN para comparativa 1:1 visual
             df_bt_crossed = df_bt_crossed.sort_values(by=inp_cols)
             df_fw_crossed = df_fw_crossed.sort_values(by=inp_cols)
 
-        if df_bt_crossed.empty:
+        # 6. Organización: Crear subcarpeta de Cruces
+        crossed_dir = os.path.join(ea_dir, '2_CROSSED_DNA')
+        os.makedirs(crossed_dir, exist_ok=True)
+
+        # 7. Guardar Resultados Finales y Sensor (Incluso si están vacíos)
+        output_bt = os.path.join(crossed_dir, f"{ea_name}_genetic_crossed.csv")
+        output_fw = os.path.join(crossed_dir, f"{ea_name}_forward_crossed.csv")
+
+        df_bt_crossed.to_csv(output_bt, index=False)
+        df_fw_crossed.to_csv(output_fw, index=False)
+
+        count_crossed = len(df_bt_crossed)
+        with open(os.path.join(crossed_dir, "resumen_cruce.txt"), 'w', encoding='utf-8') as f:
+            f.write(f"dna_crossed={'YES' if count_crossed > 0 else 'NO'} ({count_crossed})\n")
+
+        if count_crossed == 0:
             print(f"   ⚠️  Ningún ADN coincide en ambos periodos tras el filtrado estricto.")
+            print(f"   🚦 Sensor creado: resumen_cruce.txt (NO)")
             skipped += 1
             continue
 
-        # Guardar CSVs cruzados
-        fw_out = os.path.join(ea_dir, f"{ea_name}_forward_crossed.csv")
-        bt_out = os.path.join(ea_dir, f"{ea_name}_genetic_crossed.csv")
-
-        df_fw_crossed.to_csv(fw_out, index=False)
-        df_bt_crossed.to_csv(bt_out, index=False)
-
         print(f"   Forward filtrado  : {len(df_fw)} sets")
         print(f"   Genético filtrado : {len(df_bt)} sets")
-        print(f"   🏆 ADNs cruzados  : {len(df_fw_crossed)} (sobrevivieron AMBOS periodos)")
-        print(f"   💾 {ea_name}_forward_crossed.csv")
-        print(f"   💾 {ea_name}_genetic_crossed.csv")
+        print(f"   🏆 ADNs cruzados  : {count_crossed} (sobrevivieron AMBOS periodos)")
+        print(f"   💾 Guardado en: {crossed_dir}")
+        print(f"   🚦 Sensor creado: resumen_cruce.txt")
 
         processed += 1
 

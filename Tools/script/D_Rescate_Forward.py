@@ -8,6 +8,7 @@ D_Rescate_Forward.py (ZERO-DEPENDENCY CLUSTERING)
 """
 
 import os
+import sys
 import json
 import configparser
 import pandas as pd
@@ -69,23 +70,54 @@ def get_inp_cols(ea_name: str) -> list:
 # ==============================================================================
 def main():
     print("=" * 68)
-    print("🚨 D_Rescate_Forward  |  CLUSTERING MANUAL & FILTRADO DURO")
+    print("🚨 D_Rescate_Forward  |  CLI MODE - FILTRADO QUIRÚRGICO")
     print("=" * 68)
 
-    ea_folders = [f for f in os.listdir(ANALIZADOS) if os.path.isdir(os.path.join(ANALIZADOS, f))]
-    candidatos = [ea for ea in ea_folders if not os.path.exists(os.path.join(ANALIZADOS, ea, f"{ea}_forward_crossed.csv")) and os.path.exists(os.path.join(ANALIZADOS, ea, f"{ea}_forward_filtered.csv"))]
-
-    if not candidatos:
-        print("\n✅ Todos los EAs tienen convergencia o no han sido filtrados.")
+    # 1. Validación de Argumentos
+    if len(sys.argv) < 3:
+        print("\n[ERROR] Uso: python D_Rescate_Forward.py <EA_NAME> <TIMEFRAME>")
+        print("Ejemplo: python D_Rescate_Forward.py Apex_Predator_V1 M15")
         return
 
-    print(f"\n📋 EAs para rescate detectados: {candidatos}")
-    ea_name = candidatos[0] if len(candidatos) == 1 else input("Elegí el EA: ")
+    ea_name  = sys.argv[1]
+    tf_input = sys.argv[2].upper()
     
-    # Cargar datos filtrados (los 78)
-    fw_path = os.path.join(ANALIZADOS, ea_name, f"{ea_name}_forward_filtered.csv")
+    ea_dir = os.path.join(ANALIZADOS, ea_name)
+    if not os.path.exists(ea_dir):
+        print(f"\n[ERROR] No existe la carpeta del EA: {ea_name}")
+        return
+
+    # 📂 1. SENSORES DE ABORTO (Inteligencia de Flujo)
+    cruce_txt  = os.path.join(ea_dir, '2_CROSSED_DNA', 'resumen_cruce.txt')
+    filtro_txt = os.path.join(ea_dir, '3_FILTERED_POST_FW', 'resumen_filtrado.txt')
+
+    # A) Check de Salud (¿Ya es elite?)
+    if os.path.exists(cruce_txt):
+        with open(cruce_txt, 'r') as f:
+            content = f.read()
+            try:
+                count_crossed = int(content.split('(')[1].split(')')[0])
+                if count_crossed >= 3:
+                    print(f"\n✅ [ABORTO] {ea_name} es SALUDABLE ({count_crossed} cruzados). No hace falta rescate.")
+                    return
+            except: pass
+
+    # B) Check de Materia Prima (¿Hay algo que rescatar?)
+    if os.path.exists(filtro_txt):
+        with open(filtro_txt, 'r') as f:
+            content = f.read()
+            if "forward_filtered=NO" in content:
+                print(f"\n🛑 [ABORTO] {ea_name} no tiene sobrevivientes en Forward. Nada que rescatar.")
+                return
+
+    # 2. Cargar datos filtrados (Buscando en la carpeta 3_FILTERED_POST_FW)
+    fw_path = os.path.join(ea_dir, '3_FILTERED_POST_FW', f"{ea_name}_forward_filtered.csv")
+    if not os.path.exists(fw_path):
+        print(f"\n[ERROR] No se encontró forward_filtered.csv en {fw_path}")
+        return
+
     df = pd.read_csv(fw_path)
-    print(f"\n📂 Analizando {len(df)} sets existentes...")
+    print(f"\n📂 Analizando {len(df)} sets del Forward para posible rescate...")
 
     # Detectar ADN (inputs)
     inp_cols = get_inp_cols(ea_name)
@@ -94,11 +126,10 @@ def main():
 
     # CLUSTERING (Manual K-Means)
     print("🎨 Agrupando por familias de ADN (Algoritmo de Islario Humano)...")
-    n_clusters = min(5, len(df)) # Subimos a 5 para mayor sensibilidad
+    n_clusters = min(5, len(df))
     df['cluster'] = simple_kmeans(df[inp_cols], k=n_clusters)
 
     # FILTROS DUROS DE RESCATE
-    tf_input = input("\n¿Cuál es el Timeframe para los filtros de rescate? (M15, H1, H4, D1): ").strip().upper()
     print(f"🔪 Aplicando filtros duros del .conf para {tf_input}...")
     criteria = load_conf(tf_input) 
     
@@ -111,7 +142,7 @@ def main():
     df_rescue = df[mask].copy()
     
     if df_rescue.empty:
-        print("\n⚠️ Ningún set sobrevivió a los filtros duros.")
+        print("\n⚠️ Ningún set sobrevivió a los filtros duros de rescate.")
         return
 
     # SELECCIONAR ALFAS (Mejor de cada cluster)

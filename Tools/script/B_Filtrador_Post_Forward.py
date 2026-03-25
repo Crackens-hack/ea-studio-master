@@ -1,5 +1,5 @@
 """
-B_Analista_Post_Forward.py
+B_Filtrador_Post_Forward.py
 ==========================
 Filtrado estándar de calidad Post-Genético + Forward.
 Lee los CSVs normalizados, aplica criterios del archivo de configuración
@@ -117,20 +117,29 @@ def save_filtered(df: pd.DataFrame, out_dir: str, filename: str):
 # ==============================================================================
 def main():
     print("=" * 68)
-    print("🦈 B_Analista_Post_Forward.py  |  Filtro Estándar de Calidad")
+    print("🦈 B_Filtrador_Post_Forward.py  |  CLI MODE - FILTRADO QUIRÚRGICO")
     print("=" * 68)
 
-    # 1. Preguntas al usuario
-    print()
-    bt_years  = int(input("¿Cuántos años duró el Backtest/Genético? (ej: 4): ").strip())
-    fw_years  = int(input("¿Cuántos años duró el Forward? (ej: 2): ").strip())
-    tf        = input("¿Cuál es el Timeframe? (M15, H1, H4, D1): ").strip().upper()
+    # 1. Gestión de Argumentos o Inputs
+    if len(sys.argv) >= 5:
+        # Modo Automático (CLI)
+        ea_name   = sys.argv[1]
+        bt_years  = int(sys.argv[2])
+        fw_years  = int(sys.argv[3])
+        tf        = sys.argv[4].upper()
+        print(f"   [CLI] EA: {ea_name} | BT: {bt_years}y | FW: {fw_years}y | TF: {tf}")
+    else:
+        # Modo Interactivo
+        print("\n[MODO INTERACTIVO] Ingresá los datos manualmente:")
+        bt_years  = int(input("¿Cuántos años duró el Backtest/Genético? (ej: 4): ").strip())
+        fw_years  = int(input("¿Cuántos años duró el Forward? (ej: 2): ").strip())
+        tf        = input("¿Cuál es el Timeframe? (M15, H1, H4, D1): ").strip().upper()
+        
+        # Selección de EA (Solo si no viene por argumento)
+        ea_folders = list_ea_folders()
+        ea_name    = choose_ea(ea_folders)
 
-    criteria = load_conf(tf)
-
-    # 2. Selección de EA
-    ea_folders = list_ea_folders()
-    ea_name    = choose_ea(ea_folders)
+    criteria   = load_conf(tf)
     ea_dir     = os.path.join(INPUT_BASE, ea_name)
     out_dir    = os.path.join(OUTPUT_BASE, ea_name)
 
@@ -159,22 +168,51 @@ def main():
     print(f"   Backtest: {len(df_bt)} sets totales")
     print(f"   Forward : {len(df_fw)} sets totales")
 
-    # 5. Aplicar filtros
+    # 4. Determinar carpetas de salida
+    # La salida SIEMPRE va a Reportes-Analizados
+    out_dir = os.path.join(OUTPUT_BASE, ea_name, '3_FILTERED_POST_FW')
+    
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    # 5. Aplicar filtros a cada periodo
     print("\n🔪 APLICANDO GUILLOTINA DE ACERO VALYRIO...")
     df_bt_filtered = apply_filters(df_bt, criteria, bt_years, "BACKTEST")
     df_fw_filtered = apply_filters(df_fw, criteria, fw_years, "FORWARD")
 
-    # 6. Guardar resultados con TODAS las columnas (métricas + inputs)
+    # --- 💾 EXPORTANDO CSVs FILTRADOS ---
     print("\n💾 EXPORTANDO CSVs FILTRADOS...")
-    save_filtered(df_bt_filtered, out_dir, f"{ea_name}_genetic_filtered.csv")
-    save_filtered(df_fw_filtered, out_dir, f"{ea_name}_forward_filtered.csv")
+    
+    # 📂 Organización: Crear subcarpeta del Analista
+    # out_dir = os.path.join(ea_dir, '3_FILTERED_POST_FW') # This line is now redundant
+    # if not os.path.exists(out_dir): # This check is now redundant
+    #     os.makedirs(out_dir) # This creation is now redundant
 
-    # 7. Resumen final
+    out_genetic = os.path.join(out_dir, f"{ea_name}_genetic_filtered.csv")
+    out_forward = os.path.join(out_dir, f"{ea_name}_forward_filtered.csv")
+
+    # Guardar siempre (incluso si están vacíos - solo cabecera)
+    df_bt_filtered.to_csv(out_genetic, index=False)
+    df_fw_filtered.to_csv(out_forward, index=False)
+
+    # 📂 8. Generar Sensor para el Pipeline (info.txt)
+    count_bt = len(df_bt_filtered)
+    count_fw = len(df_fw_filtered)
+    
+    info_path = os.path.join(out_dir, "resumen_filtrado.txt")
+    with open(info_path, 'w', encoding='utf-8') as f:
+        f.write(f"forward_filtered={'YES' if count_fw > 0 else 'NO'} ({count_fw})\n")
+        f.write(f"genetic_filtered={'YES' if count_bt > 0 else 'NO'} ({count_bt})\n")
+
+    print(f"    💾 Guardado en: {out_dir}")
+    print(f"    🚦 Sensor creado: {info_path}")
+
+    # 9. Resumen final
     print()
     print("=" * 68)
     print(f"✅ FILTRADO COMPLETO")
-    print(f"   Backtest élite : {len(df_bt_filtered)} sets")
-    print(f"   Forward élite  : {len(df_fw_filtered)} sets")
+    print(f"   Backtest élite : {count_bt} sets")
+    print(f"   Forward élite  : {count_fw} sets")
     print(f"   Destino        : {out_dir}")
     print()
     print("📌 Próximo paso:")
