@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 # CONFIGURACIÓN
 # ==============================================================================
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR    = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+ROOT_DIR    = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 MODE_FOLDER = 'genetica70_fw30_OPTIMIZACION_GENETICA_FW'
 BASE_DIR    = os.path.join(ROOT_DIR, 'BUILD', 'RESULTADOS', 'Reportes-Analizados', MODE_FOLDER)
 MAX_CLUSTERS = 18
@@ -86,7 +86,7 @@ def main():
 
         # 5. Cargar PESOS del .conf
         import configparser
-        conf_path = os.path.join(SCRIPT_DIR, 'criterios-de-clustering-elite.conf')
+        conf_path = os.path.join(SCRIPT_DIR, '..', 'Config-Filters', 'criterios-de-clustering-elite.conf')
         weights = {'sharpe_ratio': 1.0, 'profit_factor': 1.0, 'result': 1.0, 'recovery_factor': 1.0, 'trades': 1.0}
         
         if os.path.exists(conf_path):

@@ -1,8 +1,8 @@
 """
-E_Master_Fenix.py
-================
+B_Master_Filter_Post_Forward.py
+==============================
 Orquestador Maestro del Pipeline de Trading (Protocolo Fénix).
-Coordina el Filtrado, Cruce, Clustering y Rescate en un solo flujo.
+Coordina el Filtrado (A), Cruce (B), Clustering (C) y Rescate (D) en un solo flujo.
 """
 
 import os
@@ -19,10 +19,10 @@ MODE_FOLDER  = 'genetica70_fw30_OPTIMIZACION_GENETICA_FW'
 INPUT_BASE   = os.path.join(ROOT_DIR, 'BUILD', 'RESULTADOS', 'Reportes-Normalizados', MODE_FOLDER)
 
 # Scripts en orden de ejecución
-SCRIPT_B = os.path.join(SCRIPT_DIR, 'B_Filtrador_Post_Forward.py')
-SCRIPT_C = os.path.join(SCRIPT_DIR, 'C_Cruce_Pass.py')
-SCRIPT_D1 = os.path.join(SCRIPT_DIR, 'D_Clustering_Elite.py')
-SCRIPT_D2 = os.path.join(SCRIPT_DIR, 'D_Rescate_Forward.py')
+SCRIPT_A = os.path.join(SCRIPT_DIR, 'Pipe-Post-Forward', 'A_Filtrador_Post_Forward.py')
+SCRIPT_B = os.path.join(SCRIPT_DIR, 'Pipe-Post-Forward', 'B_Cruce_Filter.py')
+SCRIPT_C = os.path.join(SCRIPT_DIR, 'Pipe-Post-Forward', 'C_Clustering_Elite.py')
+SCRIPT_D = os.path.join(SCRIPT_DIR, 'Pipe-Post-Forward', 'D_Rescate_Forward.py')
 
 def list_ea_folders():
     if not os.path.isdir(INPUT_BASE):
@@ -76,17 +76,17 @@ def main():
     print("📦 INICIANDO PIPELINE AUTOMATIZADO...")
     print("🏁" * 34)
 
-    # PASO B: Filtrador (Quirúrgico con argumentos)
-    run_step([PYTHON_EXE, SCRIPT_B, ea_name, bt_years, fw_years, timeframe], "B - FILTRADOR POST-FORWARD")
+    # PASO A: Filtrador (Quirúrgico con argumentos)
+    run_step([PYTHON_EXE, SCRIPT_A, ea_name, bt_years, fw_years, timeframe], "A - FILTRADOR POST-FORWARD")
 
-    # PASO C: Cruce de ADN (Autónomo)
-    run_step([PYTHON_EXE, SCRIPT_C], "C - CRUCE DE ADN")
+    # PASO B: Cruce de ADN (Autónomo)
+    run_step([PYTHON_EXE, SCRIPT_B], "B - CRUCE DE ADN")
 
-    # PASO D1: Clustering Elite (Autónomo)
-    run_step([PYTHON_EXE, SCRIPT_D1], "D1 - CLUSTERING ELITE")
+    # PASO C: Clustering Elite (Autónomo)
+    run_step([PYTHON_EXE, SCRIPT_C], "C - CLUSTERING ELITE")
 
-    # PASO D2: Rescate Forward (Quirúrgico si hay fragilidad)
-    run_step([PYTHON_EXE, SCRIPT_D2, ea_name, timeframe], "D2 - ESCUADRÓN DE RESCATE")
+    # PASO D: Rescate Forward (Quirúrgico si hay fragilidad)
+    run_step([PYTHON_EXE, SCRIPT_D, ea_name, timeframe], "D - ESCUADRÓN DE RESCATE")
 
     print("\n" + "=" * 68)
     print("🏆 PIPELINE FINALIZADO CON ÉXITO")

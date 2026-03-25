@@ -16,8 +16,8 @@ import pandas as pd
 # RUTAS BASE
 # ==============================================================================
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR     = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
-CONF_FILE    = os.path.join(SCRIPT_DIR, 'criterios-minimos-post-forward.conf')
+ROOT_DIR     = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+CONF_FILE    = os.path.join(SCRIPT_DIR, '..', 'Config-Filters', 'criterios-minimos-post-forward.conf')
 MODE_FOLDER  = 'genetica70_fw30_OPTIMIZACION_GENETICA_FW'
 INPUT_BASE   = os.path.join(ROOT_DIR, 'BUILD', 'RESULTADOS', 'Reportes-Normalizados', MODE_FOLDER)
 OUTPUT_BASE  = os.path.join(ROOT_DIR, 'BUILD', 'RESULTADOS', 'Reportes-Analizados', MODE_FOLDER)

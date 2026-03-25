@@ -18,8 +18,8 @@ import numpy as np
 # RUTAS BASE
 # ==============================================================================
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR     = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
-CONF_FILE    = os.path.join(SCRIPT_DIR, 'criterios-de-rescate-forward.conf')
+ROOT_DIR     = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+CONF_FILE    = os.path.join(SCRIPT_DIR, '..', 'Config-Filters', 'criterios-de-rescate-forward.conf')
 MODE_FOLDER  = 'genetica70_fw30_OPTIMIZACION_GENETICA_FW'
 ANALIZADOS   = os.path.join(ROOT_DIR, 'BUILD', 'RESULTADOS', 'Reportes-Analizados', MODE_FOLDER)
 
