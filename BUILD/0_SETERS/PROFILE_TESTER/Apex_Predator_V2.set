@@ -1,0 +1,23 @@
+;archivo de configuracion
+InpBBPeriod=20||10||2||50||1
+InpBBDialation=2.500000||1.500000||0.250000||4.000000||1
+InpRSIPeriod=14||8||2||20||1
+InpRSIOverbought=70.000000||60.000000||5.000000||90.000000||1
+InpRSIOversold=30.000000||10.000000||5.000000||40.000000||1
+InpUseEMAFilter=true||0||0||0||1
+InpEMAPeriod=200||0||0||0||0
+InpUseADXFilter=true||0||0||0||1
+InpADXPeriod=14||0||0||0||0
+InpADXThreshold=30||15||5||45||1
+InpLotSize=0.100000||0||0||0||0
+InpATRPeriod=14||0||0||0||0
+InpATR_SL_Mult=3.000000||1.500000||0.500000||6.000000||1
+InpATR_TP_Mult=2.000000||0.500000||0.500000||6.000000||1
+InpUseFixedPerc=false||0||0||0||0
+InpRiskPercent=2.000000||0||0||0||0
+InpMaxSpread=30||0||0||0||0
+InpUseTrailing=true||0||1||0||1
+InpTrailingATRMult=1.500000||0.500000||0.200000||3.000000||1
+InpTrailingTrigger=1.000000||0.500000||0.250000||4.000000||1
+InpTFMode=1||0||0||0||0
+InpDebug=false||0||0||0||0

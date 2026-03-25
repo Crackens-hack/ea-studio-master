@@ -1,0 +1,23 @@
+;archivo de configuracion
+InpBBPeriod=20
+InpBBDialation=2.5
+InpRSIPeriod=14
+InpRSIOverbought=70.0
+InpRSIOversold=30.0
+InpUseEMAFilter=true
+InpEMAPeriod=200
+InpUseADXFilter=true
+InpADXPeriod=14
+InpADXThreshold=30
+InpLotSize=0.10
+InpATRPeriod=14
+InpATR_SL_Mult=3.0
+InpATR_TP_Mult=2.0
+InpUseFixedPerc=false
+InpRiskPercent=2.0
+InpMaxSpread=30
+InpUseTrailing=true
+InpTrailingATRMult=1.5
+InpTrailingTrigger=1.0
+InpTFMode=1
+InpDebug=false
