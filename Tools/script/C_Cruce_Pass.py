@@ -109,18 +109,24 @@ def main():
             skipped += 1
             continue
 
-        # Construir set de ADNs del Forward filtrado
-        fw_dna_set = set(df_fw.apply(lambda row: dna_key(row, inp_cols), axis=1))
-
-        # Filtrar el Genético: solo los que tienen ese mismo ADN
+        # Intersección real de ADNs (Sets que están en AMBOS)
         df_bt['_dna'] = df_bt.apply(lambda row: dna_key(row, inp_cols), axis=1)
         df_fw['_dna'] = df_fw.apply(lambda row: dna_key(row, inp_cols), axis=1)
 
-        df_bt_crossed = df_bt[df_bt['_dna'].isin(fw_dna_set)].drop(columns=['_dna']).copy()
-        df_fw_crossed = df_fw[df_fw['_dna'].isin(fw_dna_set)].drop(columns=['_dna']).copy()
+        bt_dna_set = set(df_bt['_dna'])
+        fw_dna_set = set(df_fw['_dna'])
+        common_dna = bt_dna_set.intersection(fw_dna_set)
+
+        df_bt_crossed = df_bt[df_bt['_dna'].isin(common_dna)].drop(columns=['_dna']).copy()
+        df_fw_crossed = df_fw[df_fw['_dna'].isin(common_dna)].drop(columns=['_dna']).copy()
+
+        if common_dna:
+            # Asegurar mismo orden por Pass ID o ADN para comparativa 1:1 visual
+            df_bt_crossed = df_bt_crossed.sort_values(by=inp_cols)
+            df_fw_crossed = df_fw_crossed.sort_values(by=inp_cols)
 
         if df_bt_crossed.empty:
-            print(f"   ⚠️  Ningún ADN del Forward coincide en el Genético. Sin Élite para este EA.")
+            print(f"   ⚠️  Ningún ADN coincide en ambos periodos tras el filtrado estricto.")
             skipped += 1
             continue
 

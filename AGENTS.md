@@ -46,8 +46,10 @@ Toda la fabricación de EAs ocurre dentro de `BUILD/1_BUILDING/`.
 
 ### 2) Codificación y Nomenclatura (SIMETRÍA DUCKDB)
 - **REGLA DE ORO**: Todo input MQL5 (`input type variable`) **OBLIGATORIAMENTE** empieza con `Inp` (Ej: `InpBaseLot`). Vital para que `DuckDB_Analyzer.py` identifique parámetros.
+- **LA REGLA DEL .SET (NUEVA)**: El archivo `.set` siempre tiene prioridad absoluta sobre los parámetros definidos en el código fuente. 
+    - No es necesario inyectar parámetros y re-compilar para cada prueba; basta con actualizar el `.set` en `BUILD/0_SETERS/PROFILE_TESTER/`.
+    - Antes de cada test, **SIEMPRE** verificar que el `.set` no tenga valores "basura" de sesiones anteriores.
 - Generar `BUILD/1_BUILDING/01_ea_construccion/<EA>_teoria.md` con lógica y gestión de riesgo.
-- **ITERACIÓN**: Si falla la lógica original, descartar idea e informar. No cambiar la naturaleza de la estrategia en el mismo archivo; crear un nuevo EA.
 
 ### 3) Métricas y OnTester (MANDATORIO)
 - Consultar **`.docs/fitness/fitness-ontester.md`** antes de implementar. Es OBLIGATORIO usar la arquitectura de Fitness Adaptativo Grado Hedge Fund (V5.4) con autodetección temporal y bloques lógicos.
