@@ -14,25 +14,25 @@
 //| ESTRUCTURA DE INPUTS (REGLA Inp + DUCKDB SYMMETRY)               |
 //+------------------------------------------------------------------+
 input group "=== LÓGICA CORE: REVERSIÓN A LA MEDIA ==="
-input int      InpBBPeriod       = 20;      // Periodo Bandas Bollinger
+input int      InpBBPeriod       = 10;      // Periodo Bandas Bollinger
 input double   InpBBDialation    = 2.5;     // Desviación Estándar BB
-input int      InpRSIPeriod      = 14;      // Periodo RSI
-input double   InpRSIOverbought  = 70.0;    // Nivel RSI Sobrecompra (Ventas)
+input int      InpRSIPeriod      = 15;      // Periodo RSI
+input double   InpRSIOverbought  = 80.0;    // Nivel RSI Sobrecompra (Ventas)
 input double   InpRSIOversold    = 30.0;    // Nivel RSI Sobreventa (Compras)
 
 input group "=== GESTIÓN DE RIESGO (1:1 SYMMETRY) ==="
 input double   InpLotSize        = 0.10;    // Lote Fijo (Modo 5000 ProCent)
 input int      InpATRPeriod      = 14;      // Periodo ATR para SL/TP
-input double   InpATR_SL_Mult    = 2.0;     // Multiplicador ATR para SL
-input double   InpATR_TP_Mult    = 2.0;     // Multiplicador ATR para TP (Simetría)
+input double   InpATR_SL_Mult    = 3.0;     // Multiplicador ATR para SL
+input double   InpATR_TP_Mult    = 1.0;     // Multiplicador ATR para TP (Simetría)
 input bool     InpUseFixedPerc   = false;   // Usar % de Balance (Compounding)
 input double   InpRiskPercent    = 1.0;     // % de Riesgo por Trade
 input int      InpMaxSpread      = 30;      // Máximo Spread Permitido (Points)
 
 input group "=== PROTECCIÓN Y TRAILING ==="
 input bool     InpUseTrailing    = true;    // Activar Trailing Stop
-input double   InpTrailingATRMult= 1.5;     // Multiplicador ATR para Trailing
-input double   InpTrailingTrigger= 1.0;     // Gatillo (Beneficio Mín. en ATR para Trailing)
+input double   InpTrailingATRMult= 1.7;     // Multiplicador ATR para Trailing
+input double   InpTrailingTrigger= 2.25;    // Gatillo (Beneficio Mín. en ATR para Trailing)
 
 input group "=== FITNESS ADAPTATIVO V5.4 ==="
 input int      InpTFMode         = 1;       // 0=Alta (M1-M5), 1=Media (M15-H1), 2=Baja (H4-D1)
