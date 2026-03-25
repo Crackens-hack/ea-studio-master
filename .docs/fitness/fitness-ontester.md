@@ -205,3 +205,19 @@ InpDebug=0||0||0||0||N
 ```
 
 **Nota para Agentes**: La regla de oro es comenzar siempre el preset con `;archivo de configuracion` y respetar los 5 campos de MetaTrader (`Valor||Mínimo||Paso||Máximo||Flags`). El `InpTFMode` NUNCA se optimiza. 🤜🤛💎🚀🔝🏆🦾🥈🏆🔝🚀🦾🏆
+
+---
+
+## 🔍 9. ESCALADOR VISUAL DE EXPECTATIVAS (AMPLIFICADOR MT5)
+
+Para forzar la "presión evolutiva" en el optimizador genético cerrado de MT5 y evadir los posibles redondeos de Epsilon en distancias microscópicas (ej. `1e-07`), y además proporcionar una UX visualmente analizable en el gráfico, el retorno final de `OnTester` exige un escalador lineal:
+
+```mql5
+return (fitness * 1000000.0) + 1e-8;
+```
+
+**Tabla Práctica de Escala Visual Resultante:**
+*   `0` a `0.05` → Algoritmo o parámetros mediocres / Sobreajustados (Basura).
+*   `0.1` a `0.8` → Rentabilidad básica, pero en terrenos frágiles. (El clásico "meh").
+*   `1.0` a `5.0` → **El Terreno Elegido.** ADN consistente con buen win rate.
+*   `> 5.0` → Potencial candidato súper élite a revisión final intensiva.
