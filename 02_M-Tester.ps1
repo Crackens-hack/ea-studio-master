@@ -94,6 +94,7 @@ function Get-Modes {
                 preset=$preset
                 autoNormalizer=$autoNormalizer
                 fragmentation=$fragmentation
+                fullTime=($parts -contains "Full_time")
             }
         }
     }
@@ -443,6 +444,22 @@ if($mode.fragmentation){
         Write-Host ">>> DISPARANDO FRAGMENTO: $iterYear ($iterFrom -> $iterTo)" -ForegroundColor Cyan
         Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
         Write-Host ">>> FRAGMENTO $iterYear COMPLETADO." -ForegroundColor Green
+    }
+
+    if($mode.fullTime){
+        Write-Host ""
+        Write-Host ">>> DISPARANDO CORRIDA FULL-TIME ($fromDate -> $toDate)" -ForegroundColor Magenta
+        
+        $fullIni = $ini
+        $fullIni = $fullIni | ForEach-Object {
+            if($_ -match "^FromDate="){ "FromDate=$fromDate" }
+            elseif($_ -match "^ToDate="){ "ToDate=$toDate" }
+            elseif($_ -match "^Report="){ "Report=$report" }
+            else { $_ }
+        }
+        $fullIni | Set-Content $iniOutput -Encoding UTF8
+        Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
+        Write-Host ">>> CORRIDA FULL-TIME COMPLETADA." -ForegroundColor Green
     }
 }
 else {
