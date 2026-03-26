@@ -1,5 +1,5 @@
 00_setup/Instancias/
-000_SETERS/
+0_SETERS/
 *.dll
 .env
 *.log
@@ -30,4 +30,4 @@ BUILD/1_BUILDING/05_METRICAS_ELITES/*
 
 # Ignorar Binarios Continentales (MT5)
 00_setup/bin/*
-!00_setup/bin/.gitkeep
+!00_setup/bin/.gitkeep
