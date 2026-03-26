@@ -439,7 +439,7 @@ def generar_csv_resumen(flat: dict, csv_path: Path):
         writer.writerow(row)
 
 
-def run_htm(repo_root: Path):
+def run_htm(repo_root: Path, ea_cli=None, pass_cli=None):
     rep_root = load_reports_root(repo_root)
     out_root = repo_root / "BUILD" / "RESULTADOS" / "Reportes-Normalizados"
 
@@ -475,13 +475,27 @@ def run_htm(repo_root: Path):
             is_full_time      = (is_fragmented and "_ANYO_" not in full_stem)
 
             # Definir carpeta de salida
-            if is_fragmented:
+            if ea_cli and pass_cli:
+                # MODO DISCRECIONAL (Inyectado por M-Tester)
+                # Ruta: .../ea_name___discrecional/pass_id/Nombre_Fragmento
+                folder_ea_discr = f"{ea_cli}___discrecional"
+                if is_fragmented:
+                    # Si es el maestre completo del fragmentado, lo llamamos FULL-TIME
+                    folder_leaf = "FULL-TIME" if is_full_time else ea_base_from_file
+                    report_dir = out_root / rel.parent / folder_ea_discr / str(pass_cli) / folder_leaf
+                    ea_file_name = folder_leaf
+                else:
+                    report_dir = out_root / rel.parent / folder_ea_discr / str(pass_cli)
+                    ea_file_name = ea_base_from_file
+            elif is_fragmented:
+                # MODO ESTÁNDAR FRAGMENTADO
                 # Si es el maestre completo del fragmentado, lo llamamos FULL-TIME
                 folder_leaf = "FULL-TIME" if is_full_time else ea_base_from_file
                 # Jerarquía: Modo / EA_Expert / Nombre_Fragmento
                 report_dir = out_root / rel.parent / ea_expert_name / folder_leaf
                 ea_file_name = folder_leaf
             else:
+                # MODO ESTÁNDAR UNIFICADO
                 # Jerarquía estándar: Modo / EA_Base
                 report_dir = out_root / rel.parent / ea_base_from_file
                 ea_file_name = ea_base_from_file
@@ -700,7 +714,13 @@ def run_htm(repo_root: Path):
     # --- FASE FINAL: Generar Consolidados de Fragmentación ---
     for (s_name, ea_name), data in colector_fragmentos.items():
         try:
-            resumen_dir = out_root / s_name / ea_name / "1_RESUMEN"
+            if ea_cli and pass_cli:
+                # En modo discrecional, el resumen va dentro de la carpeta del pass
+                folder_ea_discr = f"{ea_cli}___discrecional"
+                resumen_dir = out_root / s_name / folder_ea_discr / str(pass_cli) / "1_RESUMEN"
+            else:
+                resumen_dir = out_root / s_name / ea_name / "1_RESUMEN"
+            
             resumen_dir.mkdir(parents=True, exist_ok=True)
             resumen_file = resumen_dir / "resumen-fragmentacion.csv"
             
@@ -725,6 +745,8 @@ def main():
     parser = argparse.ArgumentParser(description="Normalizador master: XML->CSV y HTM->MD/JSON.")
     parser.add_argument("--xml", action="store_true", help="Solo convertir XML.")
     parser.add_argument("--htm", action="store_true", help="Solo procesar HTM.")
+    parser.add_argument("--ea", type=str, help="Nombre del EA para modo discrecional.")
+    parser.add_argument("--pass_id", type=str, help="ID de Pass para modo discrecional.")
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent.parent.parent
@@ -735,7 +757,7 @@ def main():
     if do_xml:
         run_xml(repo_root)
     if do_htm:
-        run_htm(repo_root)
+        run_htm(repo_root, ea_cli=args.ea, pass_cli=args.pass_id)
 
 
 if __name__ == "__main__":

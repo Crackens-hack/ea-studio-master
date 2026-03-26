@@ -64,6 +64,7 @@ function Get-Modes {
             $preset=$false
             $autoNormalizer=$false
             $fragmentation=$false
+            $autoCargador=$false
 
             foreach($p in $parts){
 
@@ -71,6 +72,9 @@ function Get-Modes {
                     
                     if($p -match "^_Auto_N(ZER)?_$"){
                         $autoNormalizer=$true
+                    }
+                    elseif($p -match "^_AutoCargador_$"){
+                        $autoCargador=$true
                     }
                     else {
                         $ranges+=$p
@@ -94,6 +98,7 @@ function Get-Modes {
                 preset=$preset
                 autoNormalizer=$autoNormalizer
                 fragmentation=$fragmentation
+                autoCargador=$autoCargador
                 fullTime=($parts -contains "Full_time")
             }
         }
@@ -410,88 +415,115 @@ Write-Host "Reporte: $report"
 # EJECUCION
 # -----------------------------------------------------
 
-if($mode.fragmentation){
+$isAutoCargador = ($config["AutoCargador"] -eq "True" -and $mode.autoCargador)
+$cargadorPath = Join-Path $root "Tools\script\C_Auto_Cargador_Fragmentado.py"
+$pyExe = "python"
+$venvPython = Join-Path $root ".venv\Scripts\python.exe"
+if(Test-Path $venvPython){ $pyExe = $venvPython }
+
+while($true){
     
-    Write-Host ""
-    Write-Host ">>> ACTIVADA FRAGMENTACION TEMPORAL (Auditoria Anual)" -ForegroundColor Yellow
-    
-    # Extraer años del rango (ej. _10años -> 10)
-    $yearsNum = 1
-    if($range.name -match "(\d+)años") { $yearsNum = [int]$matches[1] }
-    elseif($range.name -match "(\d+)año") { $yearsNum = [int]$matches[1] }
+    $currentPassId = "0000"
 
-    $baseToDate = [datetime]::ParseExact($config["ToDate"],"yyyy.MM.dd",$null)
-
-    for($i=0; $i -lt $yearsNum; $i++){
-        
-        $iterTo = $baseToDate.AddYears(-$i).ToString("yyyy.MM.dd")
-        $iterFrom = $baseToDate.AddYears(-($i+1)).ToString("yyyy.MM.dd")
-        
-        $iterYear = $baseToDate.AddYears(-$i).Year
-        $iterReport = $report + "_ANYO_" + $iterYear
-        
-        # Clonar INI con fechas e informe de la iteración
-        $iterIni = $ini
-        $iterIni = $iterIni | ForEach-Object {
-            if($_ -match "^FromDate="){ "FromDate=$iterFrom" }
-            elseif($_ -match "^ToDate="){ "ToDate=$iterTo" }
-            elseif($_ -match "^Report="){ "Report=$iterReport" }
-            else { $_ }
-        }
-        
-        $iterIni | Set-Content $iniOutput -Encoding UTF8
-        
-        Write-Host ">>> DISPARANDO FRAGMENTO: $iterYear ($iterFrom -> $iterTo)" -ForegroundColor Cyan
-        Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
-        Write-Host ">>> FRAGMENTO $iterYear COMPLETADO." -ForegroundColor Green
-    }
-
-    if($mode.fullTime){
+    if($isAutoCargador){
         Write-Host ""
-        Write-Host ">>> DISPARANDO CORRIDA FULL-TIME ($fromDate -> $toDate)" -ForegroundColor Magenta
-        
-        $fullIni = $ini
-        $fullIni = $fullIni | ForEach-Object {
-            if($_ -match "^FromDate="){ "FromDate=$fromDate" }
-            elseif($_ -match "^ToDate="){ "ToDate=$toDate" }
-            elseif($_ -match "^Report="){ "Report=$report" }
-            else { $_ }
+        Write-Host ">>> [AUTO-CARGADOR] Buscando siguiente cartucho para $eaName..." -ForegroundColor Magenta
+        & $pyExe $cargadorPath $eaName
+        if($LASTEXITCODE -ne 0){
+            Write-Host ">>> [AUTO-CARGADOR] No quedan más cartuchos en la recámara. Deteniendo bucle." -ForegroundColor Yellow
+            break
         }
-        $fullIni | Set-Content $iniOutput -Encoding UTF8
-        Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
-        Write-Host ">>> CORRIDA FULL-TIME COMPLETADA." -ForegroundColor Green
-    }
-}
-else {
-    # Ejecución Estándar (Bloque Único)
-    $ini | Set-Content $iniOutput -Encoding UTF8
-    Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
-}
-
-# -----------------------------------------------------
-# AUTO NORMALIZER
-# -----------------------------------------------------
-
-$globalAuto = $config["Autonormalizer"] -eq "True"
-
-if($globalAuto -and $mode.autoNormalizer){
-    
-    Write-Host ""
-    Write-Host ">>> Iniciando Normalizador Automático..." -ForegroundColor Cyan
-    
-    $normalizerPath = Join-Path $root "Tools\script\A_Normalizador_Master.py"
-    
-    if(Test-Path $normalizerPath){
         
-        $pyExe = "python"
-        $venvPython = Join-Path $root ".venv\Scripts\python.exe"
-        if(Test-Path $venvPython){ $pyExe = $venvPython }
-
-        & $pyExe $normalizerPath
-        Write-Host ">>> Normalización completada." -ForegroundColor Green
+        # Extraer Pass ID de la 'nota' .txt en presets
+        $note = Get-ChildItem -Path $presetsDir -Filter *.txt | Select-Object -First 1
+        if($note){
+            $currentPassId = $note.BaseName
+            Write-Host ">>> [AUTO-CARGADOR] Cartucho ID $currentPassId detectado y listo." -ForegroundColor Green
+        }
     }
-    else{
-        Write-Host "[WARN] No se encontró el normalizador en $normalizerPath" -ForegroundColor Yellow
+
+    if($mode.fragmentation){
+        
+        Write-Host ""
+        Write-Host ">>> ACTIVADA FRAGMENTACION TEMPORAL (Auditoria Anual)" -ForegroundColor Yellow
+        
+        # Extraer años del rango (ej. _10años -> 10)
+        $yearsNum = 1
+        if($range.name -match "(\d+)años") { $yearsNum = [int]$matches[1] }
+        elseif($range.name -match "(\d+)año") { $yearsNum = [int]$matches[1] }
+
+        $baseToDate = [datetime]::ParseExact($config["ToDate"],"yyyy.MM.dd",$null)
+
+        for($i=0; $i -lt $yearsNum; $i++){
+            
+            $iterTo = $baseToDate.AddYears(-$i).ToString("yyyy.MM.dd")
+            $iterFrom = $baseToDate.AddYears(-($i+1)).ToString("yyyy.MM.dd")
+            
+            $iterYear = $baseToDate.AddYears(-$i).Year
+            $iterReport = $report + "_ANYO_" + $iterYear
+            
+            # Clonar INI con fechas e informe de la iteración
+            $iterIni = $ini
+            $iterIni = $iterIni | ForEach-Object {
+                if($_ -match "^FromDate="){ "FromDate=$iterFrom" }
+                elseif($_ -match "^ToDate="){ "ToDate=$iterTo" }
+                elseif($_ -match "^Report="){ "Report=$iterReport" }
+                else { $_ }
+            }
+            
+            $iterIni | Set-Content $iniOutput -Encoding UTF8
+            
+            Write-Host ">>> DISPARANDO FRAGMENTO: $iterYear ($iterFrom -> $iterTo)" -ForegroundColor Cyan
+            Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
+            Write-Host ">>> FRAGMENTO $iterYear COMPLETADO." -ForegroundColor Green
+        }
+
+        if($mode.fullTime){
+            Write-Host ""
+            Write-Host ">>> DISPARANDO CORRIDA FULL-TIME ($fromDate -> $toDate)" -ForegroundColor Magenta
+            
+            $fullIni = $ini
+            $fullIni = $fullIni | ForEach-Object {
+                if($_ -match "^FromDate="){ "FromDate=$fromDate" }
+                elseif($_ -match "^ToDate="){ "ToDate=$toDate" }
+                elseif($_ -match "^Report="){ "Report=$report" }
+                else { $_ }
+            }
+            $fullIni | Set-Content $iniOutput -Encoding UTF8
+            Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
+            Write-Host ">>> CORRIDA FULL-TIME COMPLETADA." -ForegroundColor Green
+        }
+    }
+    else {
+        # Ejecución Estándar (Bloque Único)
+        $ini | Set-Content $iniOutput -Encoding UTF8
+        Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:$iniOutput") -Wait
+    }
+
+    # --- NORMALIZACION POR CADA CARGA ---
+    $globalAuto = $config["Autonormalizer"] -eq "True"
+
+    if($globalAuto -and $mode.autoNormalizer){
+        
+        Write-Host ""
+        Write-Host ">>> Iniciando Normalizador Automático..." -ForegroundColor Cyan
+        
+        $normalizerPath = Join-Path $root "Tools\script\A_Normalizador_Master.py"
+        
+        if(Test-Path $normalizerPath){
+            if($isAutoCargador){
+                & $pyExe $normalizerPath --ea $eaName --pass_id $currentPassId
+            }
+            else {
+                & $pyExe $normalizerPath
+            }
+            Write-Host ">>> Normalización completada." -ForegroundColor Green
+        }
+    }
+
+    # Si NO es modo autocargador, terminamos el bucle tras la primera vuelta
+    if(-not $isAutoCargador){
+        break
     }
 }
 

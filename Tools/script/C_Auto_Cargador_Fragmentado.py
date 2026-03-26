@@ -28,31 +28,41 @@ PRESETS_DIR = os.path.join(ROOT_DIR, 'BUILD', '0_SETERS', 'PRESETS')
 PROFILE_DIR = os.path.join(ROOT_DIR, 'BUILD', '0_SETERS', 'PROFILE_TESTER')
 
 def limpiar_seters():
-    """Borra todos los archivos .set en las carpetas de carga del M-Tester."""
+    """Borra todos los archivos .set y .txt en las carpetas de carga del M-Tester."""
     for d in [PRESETS_DIR, PROFILE_DIR]:
         if not os.path.exists(d): 
             os.makedirs(d, exist_ok=True)
             continue
-        files = glob.glob(os.path.join(d, "*.set"))
-        for f in files:
-            try: os.remove(f)
-            except: pass
+        # Borrar .set y .txt para evitar fantasmas de ejecuciones previas
+        for ext in ["*.set", "*.txt"]:
+            files = glob.glob(os.path.join(d, ext))
+            for f in files:
+                try: os.remove(f)
+                except: pass
 
-def cargar_bala(source_set_path, ea_name):
-    """Copia la bala al cargador master."""
+def cargar_bala(source_set_path, ea_name, pass_id):
+    """Copia la bala al cargador master y deja la nota del Pass."""
     limpiar_seters()
-    dest1 = os.path.join(PRESETS_DIR, f"{ea_name}.set")
-    dest2 = os.path.join(PROFILE_DIR, f"{ea_name}.set")
     
-    shutil.copy2(source_set_path, dest1)
-    shutil.copy2(source_set_path, dest2)
-    print(f"   🔋 BALA CARGADA: {ea_name}.set")
-    print(f"      -> {dest1}")
-    print(f"      -> {dest2}")
+    # Destinos para el .set
+    dest_presets = os.path.join(PRESETS_DIR, f"{ea_name}.set")
+    dest_profile = os.path.join(PROFILE_DIR, f"{ea_name}.set")
+    
+    shutil.copy2(source_set_path, dest_presets)
+    shutil.copy2(source_set_path, dest_profile)
+    
+    # Crear la "Nota" del Pass (ej: 3242.txt)
+    with open(os.path.join(PRESETS_DIR, f"{pass_id}.txt"), "w") as f:
+        f.write(str(pass_id))
+    with open(os.path.join(PROFILE_DIR, f"{pass_id}.txt"), "w") as f:
+        f.write(str(pass_id))
+        
+    print(f"   🔋 BALA CARGADA: {ea_name}.set (PASS: {pass_id})")
+    print(f"      -> Note: {pass_id}.txt created in Seters.")
 
 def buscar_y_cargar(ea_name):
     print("=" * 68)
-    print(f"🔋  D_Auto_Cargador  |  EA: {ea_name}")
+    print(f"🔋  C_Auto_Cargador_Fragmentado  |  EA: {ea_name}")
     print("=" * 68)
 
     ea_base_dir = os.path.join(ANALIZADOS, ea_name)
@@ -60,7 +70,7 @@ def buscar_y_cargar(ea_name):
         print(f"[ERROR] No existe la carpeta del EA analizado: {ea_base_dir}")
         sys.exit(1)
 
-    # 1. Definir rutas de búsqueda por prioridad
+    # 1. Definir rutas de búsqueda por prioridad (RESCATE primero)
     rutas_cargadores = [
         os.path.join(ea_base_dir, "RESCATE_CLUSTER", "CARGADOR"),
         os.path.join(ea_base_dir, "1_CLUSTERS_ELITE", "CARGADOR")
@@ -80,25 +90,34 @@ def buscar_y_cargar(ea_name):
             if os.path.exists(os.path.join(cart_path, "carga_realizada.txt")):
                 continue
             
-            # 🎯 ENCONTRAMOS EL SIGUIENTE CARTUCHO DISPONIBLE
+            # 🎯 EXTRAER PASS ID (De CARTUCHO_XX_PXXXX)
+            import re
+            match_pass = re.search(r"_P(\d+)", cart)
+            pass_id = match_pass.group(1) if match_pass else "0000"
+
+            # ENCONTRAMOS EL SIGUIENTE CARTUCHO DISPONIBLE
             set_files = glob.glob(os.path.join(cart_path, "*.set"))
             if not set_files:
                 print(f"   [WARN] El cartucho {cart} está vacío. Saltando.")
                 continue
                 
-            source_set = set_files[0] # Tomamos el .set que hay dentro
-            print(f"   🎯 Cartucho Seleccionado: {cart}")
+            source_set = set_files[0] 
+            print(f"   🎯 Cartucho Seleccionado: {cart} (ID: {pass_id})")
             
             # --- ACCION DE CARGA ---
-            cargar_bala(source_set, ea_name)
+            cargar_bala(source_set, ea_name, pass_id)
             
-            # --- FIRMA DE CARGA ---
+            # --- FIRMA DE CARGA (En la carpeta del cartucho) ---
             with open(os.path.join(cart_path, "carga_realizada.txt"), "w") as f:
                 f.write("CARGADO")
             
-            print(f"   ✅ Cartucho {cart} marcado como DISPARADO.")
+            print(f"   ✅ Cartucho {cart} marcado como DISPARADO en repositorio.")
             print("=" * 68)
-            return True # Terminamos: solo cargamos UNO.
+            return True 
+
+    print("⚠️  No hay cartuchos disponibles para cargar (todos disparados o ausentes).")
+    print("=" * 68)
+    return False
 
     print("⚠️  No hay cartuchos disponibles para cargar (todos disparados o ausentes).")
     print("=" * 68)
