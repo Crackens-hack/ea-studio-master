@@ -104,13 +104,13 @@ def main():
     # PASO C: Clustering Elite (Autónomo)
     run_step([PYTHON_EXE, SCRIPT_C], "C - CLUSTERING ELITE")
 
-    # PASO D: Rescate Forward (Quirúrgico si hay fragilidad)
-    run_step([PYTHON_EXE, SCRIPT_D, ea_name, timeframe], "D - ESCUADRÓN DE RESCATE")
+    # PASO D: Rescate Forward (DESACTIVADO - Protocolo Fénix: Solo Elites)
+    # run_step([PYTHON_EXE, SCRIPT_D, ea_name, timeframe], "D - ESCUADRÓN DE RESCATE")
 
     print("\n" + "=" * 68)
     print("🏆 PIPELINE FINALIZADO CON ÉXITO")
     print(f"   EA: {ea_name}")
-    print(f"   Status: Consultar carpetas 1_CLUSTERS_ELITE y RESCATE_CLUSTER")
+    print(f"   Status: Consultar carpeta 1_CLUSTERS_ELITE (Rescate Desactivado)")
     print("=" * 68)
 
 if __name__ == '__main__':
