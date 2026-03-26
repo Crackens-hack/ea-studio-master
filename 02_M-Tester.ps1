@@ -596,12 +596,12 @@ while($true){
     if($globalFragFilter -and $mode.fragmentation -and $mode.autoFilterFrag){
         
         Write-Host ""
-        Write-Host ">>> [AUTO-FILTER-FRAG] Invocando al Juez Forense (Analista Fragmentado)..." -ForegroundColor Magenta
+        Write-Host ">>> [AUTO-FILTER-FRAG] Invocando al Juez Forense (EA: $eaName | Pass: $currentPassId)..." -ForegroundColor Magenta
         
         $juezForense = Join-Path $root "Tools\script\D_Analista_Fragmentado.py"
         if(Test-Path $juezForense){
-            & $pyExe $juezForense
-            Write-Host ">>> [AUTO-FILTER-FRAG] Auditoría completada." -ForegroundColor Green
+            & $pyExe $juezForense --ea $eaName --pass_id $currentPassId
+            Write-Host ">>> [AUTO-FILTER-FRAG] Sentencia Dictada." -ForegroundColor Green
         }
     }
 
