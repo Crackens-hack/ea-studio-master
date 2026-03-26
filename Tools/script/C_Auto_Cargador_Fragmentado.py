@@ -134,4 +134,6 @@ if __name__ == '__main__':
     if exito:
         sys.exit(0) # Se cargó una bala con éxito
     else:
+        print("🧹 Iniciando Limpieza Técnica de Directorios Residuales...")
+        limpiar_seters()
         sys.exit(1) # No quedan balas en la recámara
