@@ -64,8 +64,12 @@ def load_schema(schema_path: str) -> dict:
         return json.load(f)
 
 def normalize_col(col: str) -> str:
-    """Lowercase + replace spaces/% with underscores, strip trailing underscores."""
-    return col.lower().strip().replace(' ', '_').replace('%', '').replace('__', '_').rstrip('_')
+    """Lowercase + replace spaces/% with underscores, strip trailing underscores.
+    Respeta el CASING original si la columna empieza con 'Inp' (Sincronía MT5)."""
+    c = col.strip().replace(' ', '_').replace('%', '').replace('__', '_').rstrip('_')
+    if c.lower().startswith('inp'):
+        return c  # Mantiene InpBBPeriod tal cual
+    return c.lower() # Aplanar métricas (profit, trades, etc.)
 
 def load_csv(csv_path: str) -> pd.DataFrame:
     df = pd.read_csv(csv_path)

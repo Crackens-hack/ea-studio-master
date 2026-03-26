@@ -62,7 +62,7 @@ def get_inp_cols(ea_name: str) -> list:
     if os.path.exists(schema_path):
         with open(schema_path, 'r', encoding='utf-8') as f:
             schema = json.load(f)
-        return [c.lower() for c in schema.get('inputs', [])]
+        return schema.get('inputs', []) # Respeta casing original
     return []
 
 # ==============================================================================

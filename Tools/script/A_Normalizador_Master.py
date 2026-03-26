@@ -97,19 +97,22 @@ def convert_xml_to_csv(xml_path: Path, csv_path: Path) -> bool:
         try:
             import duckdb
             parquet_path = csv_path.with_suffix(".parquet")
-            # Usamos normalize_names para tener nombres limpios (sin espacios, minúsculas)
+            # Usamos normalize_names para tener nombres limpios en el Parquet (ANÁLISIS)
             con = duckdb.connect()
             con.execute(f"COPY (SELECT * FROM read_csv_auto('{csv_path.as_posix()}', normalize_names=True)) TO '{parquet_path.as_posix()}' (FORMAT PARQUET)")
             
-            # Generar el "Schema Map" (Inteligencia de Columnas)
-            res = con.execute(f"SELECT * FROM '{parquet_path.as_posix()}' LIMIT 0")
-            col_names = [d[0] for d in res.description]
+            # --- Generar el "Schema Map" (Preserve Casing Original del CSV) ---
+            # Leemos la primera línea del CSV manualmente para tener los nombres REALES
+            with open(csv_path, 'r', encoding='utf-8') as f_csv:
+                reader = csv.reader(f_csv)
+                real_col_names = next(reader) # Cabecera con Mayúsculas
+            
             schema = {
                 "source_xml": xml_path.name,
-                "total_columns": len(col_names),
-                "metrics": [c for c in col_names if not c.lower().startswith("inp")],
-                "inputs": [c for c in col_names if c.lower().startswith("inp")],
-                "all_columns": col_names
+                "total_columns": len(real_col_names),
+                "metrics": [c for c in real_col_names if not c.lower().startswith("inp")],
+                "inputs": [c for c in real_col_names if c.lower().startswith("inp")],
+                "all_columns": real_col_names
             }
             schema_path = csv_path.with_suffix(".schema.json")
             with schema_path.open("w", encoding="utf-8") as sf:

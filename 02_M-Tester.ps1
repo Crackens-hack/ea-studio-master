@@ -70,6 +70,7 @@ function Get-Modes {
             $fragmentation=$false
             $autoCargador=$false
             $autoFilterPostFW=$false
+            $autoFilterFrag=$false
             $filterNumerator=0
             $filterDenominator=1
             $derivaPos=""
@@ -90,6 +91,9 @@ function Get-Modes {
                         $filterNumerator=[int]$matches[1]
                         $filterDenominator=[int]$matches[2]
                     }
+                    elseif($p -match "^_Auto_Filter_Frag_$"){
+                        $autoFilterFrag=$true
+                    }
                     else {
                         $ranges+=$p
                     }
@@ -108,6 +112,10 @@ function Get-Modes {
                 if($p -eq "Fragmentacion"){
                     $fragmentation=$true
                 }
+
+                if($p -eq "_Auto_Filter_Frag_"){
+                    $autoFilterFrag=$true
+                }
             }
 
             $modes+=[PSCustomObject]@{
@@ -119,6 +127,7 @@ function Get-Modes {
                 autoNormalizer=$autoNormalizer
                 fragmentation=$fragmentation
                 autoCargador=$autoCargador
+                autoFilterFrag=$autoFilterFrag
                 autoFilterPostFW=$autoFilterPostFW
                 filterNumerator=$filterNumerator
                 filterDenominator=$filterDenominator
@@ -321,8 +330,15 @@ while($true){
         $set="$eaName.set"
         $preset=Join-Path $presetsDir $set
         $tester=Join-Path $testerDir $set
+        
+        # --- [SALVAGUARDA APEX] ---
+        # Si existe en Presets o en Tester, lo dejamos en la carpeta de construcción
+        $pSecurity = "$root\BUILD\1_BUILDING\01_ea_construccion\$($eaName).set"
 
         if(Test-Path $preset){
+            Copy-Item -Path $preset -Destination $pSecurity -Force
+            Write-Host "[PRESET] Salvaguarda en Construcción: $set" -ForegroundColor Cyan
+            
             $presetContent = Get-Content $preset
             if(-not ($presetContent | Select-String -SimpleMatch ";archivo de configuracion")){
                 Write-Host "El preset en Presets/$set no contiene ';archivo de configuracion'. Abortando."
@@ -337,6 +353,10 @@ while($true){
             exit 1
         }
         else {
+            # Si ya esta en el Tester, tambien refrescamos la salvaguarda
+            Copy-Item -Path $tester -Destination $pSecurity -Force
+            Write-Host "[PRESET] Refrescada salvaguarda desde Tester: $set" -ForegroundColor Cyan
+
             $testerLines = Get-Content $tester
             if($testerLines[0].Trim() -like "; saved automatically on*"){
                 Write-Host "Se halló $set en Profiles/Tester pero es un autosave ('; saved automatically on ...'). Abortando."
@@ -573,7 +593,7 @@ while($true){
 
     # --- AUTO-FILTER MODO FRAGMENTADO (El Juez) ---
     $globalFragFilter = $config["AutoFilter_MODO_FRAGMENTADO"] -eq "True"
-    if($globalFragFilter -and $mode.fragmentation){
+    if($globalFragFilter -and $mode.fragmentation -and $mode.autoFilterFrag){
         
         Write-Host ""
         Write-Host ">>> [AUTO-FILTER-FRAG] Invocando al Juez Forense (Analista Fragmentado)..." -ForegroundColor Magenta

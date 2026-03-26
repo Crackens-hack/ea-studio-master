@@ -31,11 +31,19 @@ def get_inp_cols_from_schema(ea_name: str) -> list:
     if os.path.exists(schema_path):
         with open(schema_path, 'r', encoding='utf-8') as f:
             schema = json.load(f)
-        return [c.lower() for c in schema.get('inputs', [])]
+        return schema.get('inputs', []) # Mantiene el casing original del schema
     return []
 
 def normalize_cols(df: pd.DataFrame) -> pd.DataFrame:
-    df.columns = [c.lower().strip() for c in df.columns]
+    """Aplanado selectivo: Respeta casing original para inputs Inp*."""
+    new_cols = []
+    for c in df.columns:
+        c_strip = c.strip()
+        if c_strip.lower().startswith("inp"):
+            new_cols.append(c_strip) # Mantiene InpBBPeriod tal cual
+        else:
+            new_cols.append(c_strip.lower()) # Aplanar métricas
+    df.columns = new_cols
     return df
 
 def dna_key(row, inp_cols: list) -> tuple:
