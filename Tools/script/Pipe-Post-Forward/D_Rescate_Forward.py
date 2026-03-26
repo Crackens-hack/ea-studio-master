@@ -157,9 +157,12 @@ def main():
     rescue_dir = os.path.join(ANALIZADOS, ea_name, "RESCATE_CLUSTER")
     os.makedirs(rescue_dir, exist_ok=True)
 
-    # 7. GENERACIÓN DE ARCHIVOS .SET
-    print(f"📄 Generando archivos .set profesionales...")
+    # 7. GENERACIÓN DE ARCHIVOS .SET Y CARGADOR
+    print(f"📄 Generando archivos .set profesionales y Cargador de Munición...")
     
+    cargador_dir = os.path.join(rescue_dir, "CARGADOR")
+    os.makedirs(cargador_dir, exist_ok=True)
+
     # Obtener mapeo de casing correcto desde el schema
     schema_path = os.path.join(ROOT_DIR, 'BUILD', 'RESULTADOS', 'Reportes-Normalizados', MODE_FOLDER, ea_name, f"{ea_name}.schema.json")
     correct_case = {}
@@ -170,22 +173,36 @@ def main():
                 correct_case[original_name.lower()] = original_name
 
     for i, row in alfa_sets.iterrows():
-        set_filename = f"{ea_name}_ALFA_P{int(row['pass'])}_C{int(row['cluster'])}.set"
-        set_path = os.path.join(rescue_dir, set_filename)
+        pass_id = int(row['pass'])
+        cluster_id = int(row['cluster'])
         
-        with open(set_path, 'w', encoding='utf-16') as f: # MT5 prefiere UTF-16
-            f.write(";archivo de configuracion\n")
-            for col in inp_cols:
-                final_name = correct_case.get(col, col) # Usar casing real o el de la columna
-                val = row[col]
-                # Formatear números para evitar problemas de precisión
-                if isinstance(val, (float, np.float64)):
-                    val_str = f"{val:.6f}".rstrip('0').rstrip('.')
-                else:
-                    val_str = str(val)
-                f.write(f"{final_name}={val_str}\n")
+        # A) Archivo .set suelto en la raíz de rescate (para vista rápida)
+        set_filename_quick = f"{ea_name}_ALFA_P{pass_id}_C{cluster_id}.set"
+        set_path_quick = os.path.join(rescue_dir, set_filename_quick)
         
-        print(f"   ✅ .set generado: {set_filename}")
+        # B) Carpeta de Cartucho para carga masiva
+        cartucho_name = f"CARTUCHO_{cluster_id:02d}_P{pass_id}"
+        cartucho_dir = os.path.join(cargador_dir, cartucho_name)
+        os.makedirs(cartucho_dir, exist_ok=True)
+        set_path_ball = os.path.join(cartucho_dir, f"{ea_name}.set")
+        
+        # Función para escribir el .set (idéntica lógica)
+        def write_set(target_path):
+            with open(target_path, 'w', encoding='utf-16') as f:
+                f.write(";archivo de configuracion\n")
+                for col in inp_cols:
+                    final_name = correct_case.get(col, col)
+                    val = row[col]
+                    if isinstance(val, (float, np.float64, np.float32)):
+                        val_str = f"{val:.6f}".rstrip('0').rstrip('.')
+                    else:
+                        val_str = str(val)
+                    f.write(f"{final_name}={val_str}\n")
+        
+        write_set(set_path_quick)
+        write_set(set_path_ball)
+        
+        print(f"   🎯 Cartucho listo: {cartucho_name}")
 
     # 8. FINALIZAR
     out_alfa = os.path.join(rescue_dir, f"{ea_name}_ALFAS_DIVERSIFICADOS.csv")

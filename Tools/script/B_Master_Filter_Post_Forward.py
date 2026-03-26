@@ -62,15 +62,34 @@ def main():
     print("👑 ORQUESTADOR MAESTRO - PROTOCOLO FÉNIX 👑")
     print("=" * 68)
 
-    # 1. Selección Inteligente de EA
-    ea_folders = list_ea_folders()
-    ea_name = choose_ea(ea_folders)
+    # --- MODO HÍBRIDO: Detección de Argumentos CLI ---
+    if len(sys.argv) >= 5:
+        # Modo Inyectado (Automatizado)
+        ea_name   = sys.argv[1]
+        bt_years  = sys.argv[2]
+        fw_years  = sys.argv[3]
+        timeframe = sys.argv[4].upper()
+        
+        # Validación rápida de existencia de carpeta
+        ea_path = os.path.join(INPUT_BASE, ea_name)
+        if not os.path.isdir(ea_path):
+            print(f"\n[ERROR CLI] No existe la carpeta del EA en Reportes-Normalizados: {ea_name}")
+            sys.exit(1)
+            
+        print(f"\n📡 MODO SELECCIONADO: INYECCIÓN EXTERNA (CLI)")
+        print(f"   EA Detectado: {ea_name}")
+        print(f"   Filtro BT   : {bt_years} años")
+        print(f"   Filtro FW   : {fw_years} años")
+        print(f"   Timeframe   : {timeframe}")
+    else:
+        # Modo Humano (Interactivo)
+        ea_folders = list_ea_folders()
+        ea_name = choose_ea(ea_folders)
 
-    # 2. Captura de datos de la sesión
-    print("\n📝 CONFIGURACIÓN DE TIEMPOS Y FILTROS:")
-    bt_years  = input("   Años de Backtest/Genético (ej: 4): ").strip()
-    fw_years  = input("   Años de Forward (ej: 2): ").strip()
-    timeframe = input("   Timeframe (M15, H1, H4, D1): ").strip().upper()
+        print("\n📝 CONFIGURACIÓN DE TIEMPOS Y FILTROS:")
+        bt_years  = input("   Años de Backtest/Genético (ej: 4): ").strip()
+        fw_years  = input("   Años de Forward (ej: 2): ").strip()
+        timeframe = input("   Timeframe (M15, H1, H4, D1): ").strip().upper()
 
     print("\n" + "🏁" * 34)
     print("📦 INICIANDO PIPELINE AUTOMATIZADO...")

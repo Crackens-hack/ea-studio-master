@@ -138,6 +138,47 @@ def main():
         print(f"   ✅ Familias identificadas: {len(df_leaders)}")
         print(f"   💾 Guardado en: {cluster_dir}")
 
+        # ======================================================================
+        # 🧪 FASE CARGADOR: Generar archivos .set para cada líder
+        # ======================================================================
+        cargador_dir = os.path.join(cluster_dir, "CARGADOR")
+        os.makedirs(cargador_dir, exist_ok=True)
+        
+        # Obtener mapeo de casing correcto desde el schema (como en el rescatador)
+        schema_path = os.path.join(ROOT_DIR, 'BUILD', 'RESULTADOS', 'Reportes-Normalizados', MODE_FOLDER, ea_name, f"{ea_name}.schema.json")
+        correct_case = {}
+        if os.path.exists(schema_path):
+            with open(schema_path, 'r', encoding='utf-8') as f:
+                schema = json.load(f)
+                for original_name in schema.get('inputs', []):
+                    correct_case[original_name.lower()] = original_name
+
+        for i, row in df_leaders.iterrows():
+            pass_id = int(row['pass'])
+            cluster_id = int(row['cluster'])
+            
+            # 📂 Crear Carpeta del Cartucho
+            cartucho_name = f"CARTUCHO_{cluster_id:02d}_P{pass_id}"
+            cartucho_dir = os.path.join(cargador_dir, cartucho_name)
+            os.makedirs(cartucho_dir, exist_ok=True)
+            
+            # 📄 Escribir el .set (Llamarlo como el EA.set)
+            set_path = os.path.join(cartucho_dir, f"{ea_name}.set")
+            
+            with open(set_path, 'w', encoding='utf-16') as f: # MT5 prefiere UTF-16
+                f.write(";archivo de configuracion\n")
+                for col in inp_cols:
+                    final_name = correct_case.get(col, col) # Usar casing real o el de la columna
+                    val = row[col]
+                    # Formatear números para evitar problemas de precisión
+                    if isinstance(val, (float, np.float64, np.float32)):
+                        val_str = f"{val:.6f}".rstrip('0').rstrip('.')
+                    else:
+                        val_str = str(val)
+                    f.write(f"{final_name}={val_str}\n")
+            
+            print(f"      🎯 Cartucho listo: {cartucho_name}")
+
     print("\n" + "=" * 68)
     print("📢 PROCESO COMPLETADO. Revisá los archivos '_family_leaders.csv'.")
     print("=" * 68)

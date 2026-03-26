@@ -472,12 +472,15 @@ def run_htm(repo_root: Path):
             
             # Extracción del nombre base del EA para la carpeta (remover el nombre de sesión)
             ea_base_from_file = full_stem.replace(f"_{session_name}", "")
+            is_full_time      = (is_fragmented and "_ANYO_" not in full_stem)
 
             # Definir carpeta de salida
             if is_fragmented:
+                # Si es el maestre completo del fragmentado, lo llamamos FULL-TIME
+                folder_leaf = "FULL-TIME" if is_full_time else ea_base_from_file
                 # Jerarquía: Modo / EA_Expert / Nombre_Fragmento
-                report_dir = out_root / rel.parent / ea_expert_name / ea_base_from_file
-                ea_file_name = ea_base_from_file
+                report_dir = out_root / rel.parent / ea_expert_name / folder_leaf
+                ea_file_name = folder_leaf
             else:
                 # Jerarquía estándar: Modo / EA_Base
                 report_dir = out_root / rel.parent / ea_base_from_file
@@ -608,7 +611,9 @@ def run_htm(repo_root: Path):
                 for inp in flat.get("inputs_list", []):
                     if "=" in inp:
                         fila.append(inp.split("=", 1)[1].strip())
-                colector_fragmentos[key_colector]["rows"].append(fila)
+                
+                # Guardamos como tupla (prioridad, fila) para ordenar: 0 para Full-Time, 1 para el resto
+                colector_fragmentos[key_colector]["rows"].append((0 if is_full_time else 1, fila))
 
             flat["numeric"] = {
                 "profit_factor": _to_number(res.get("Profit Factor")),
@@ -699,13 +704,15 @@ def run_htm(repo_root: Path):
             resumen_dir.mkdir(parents=True, exist_ok=True)
             resumen_file = resumen_dir / "resumen-fragmentacion.csv"
             
-            # Ordenar filas por Periodo (opcional, pero ayuda a la lectura)
-            filas_ordenadas = sorted(data["rows"], key=lambda x: x[2]) # El índice 2 es "Periodo" en MAPEO_ESPANOL
+            # Ordenar filas: Full-time (prioridad 0) primero, luego el resto por Periodo (índice 2)
+            # x[0] es la prioridad, x[1] es la fila de datos
+            filas_ordenadas = sorted(data["rows"], key=lambda x: (x[0], x[1][2])) 
             
             with resumen_file.open("w", newline="", encoding="utf-8-sig") as f:
                 writer = csv.writer(f)
                 writer.writerow(data["headers"])
-                writer.writerows(filas_ordenadas)
+                for p, r in filas_ordenadas:
+                    writer.writerow(r)
             
             print(f"[CONSOLIDADO OK] -> {resumen_file}")
         except Exception as e_cons:
