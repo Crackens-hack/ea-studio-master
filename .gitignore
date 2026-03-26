@@ -9,7 +9,8 @@ MQL5/Files/
 
 Compilacion/logs
 .venv
-RESULTADOS/
+# Carpeta de Reportes Masivos (Blindaje de Ejecución)
+BUILD/RESULTADOS/*
 
 # Ignorar el contenido de las carpetas BUILD (Nueva Estructura 1_BUILDING)
 BUILD/1_BUILDING/01_ea_construccion/*
@@ -17,7 +18,6 @@ BUILD/1_BUILDING/02_ea_mejorar/*
 BUILD/1_BUILDING/03_PORTAFOLIO/*
 BUILD/1_BUILDING/04_ARCHIVADOS/*
 BUILD/1_BUILDING/05_METRICAS_ELITES/*
-BUILD/RESULTADOS/*
 
 # EXCEPCIÓN: No ignorar los archivos .gitkeep
 !BUILD/1_BUILDING/01_ea_construccion/.gitkeep
