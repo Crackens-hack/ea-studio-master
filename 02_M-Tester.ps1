@@ -65,6 +65,9 @@ function Get-Modes {
             $autoNormalizer=$false
             $fragmentation=$false
             $autoCargador=$false
+            $autoFilterPostFW=$false
+            $filterNumerator=0
+            $filterDenominator=1
 
             foreach($p in $parts){
 
@@ -75,6 +78,11 @@ function Get-Modes {
                     }
                     elseif($p -match "^_AutoCargador_$"){
                         $autoCargador=$true
+                    }
+                    elseif($p -match "^_Auto_Filter_Gen_For\[(\d+)/(\d+)\]_$"){
+                        $autoFilterPostFW=$true
+                        $filterNumerator=[int]$matches[1]
+                        $filterDenominator=[int]$matches[2]
                     }
                     else {
                         $ranges+=$p
@@ -99,6 +107,9 @@ function Get-Modes {
                 autoNormalizer=$autoNormalizer
                 fragmentation=$fragmentation
                 autoCargador=$autoCargador
+                autoFilterPostFW=$autoFilterPostFW
+                filterNumerator=$filterNumerator
+                filterDenominator=$filterDenominator
                 fullTime=($parts -contains "Full_time")
             }
         }
@@ -518,6 +529,31 @@ while($true){
                 & $pyExe $normalizerPath
             }
             Write-Host ">>> Normalización completada." -ForegroundColor Green
+        }
+    }
+
+    # --- AUTO-FILTER GENÉTICO POST-FORWARD (Puente al Orquestador) ---
+    $globalFilter = $config["AutoFilter_Genetico_Post_Forward"] -eq "True"
+    if($globalFilter -and $mode.autoFilterPostFW){
+        
+        Write-Host ""
+        Write-Host ">>> [AUTO-FILTER] Calculando tiempos para Orquestación..." -ForegroundColor Magenta
+        
+        # Extraer total de años del rango (el numerito de _6años)
+        $totalY = 1
+        if($range.name -match "(\d+)años") { $totalY = [int]$matches[1] }
+        elseif($range.name -match "(\d+)año") { $totalY = [int]$matches[1] }
+
+        # Cálculo: Forward = Total * (Num/Denom). Backtest = Total - Forward.
+        $fwY = [math]::Truncate($totalY * ($mode.filterNumerator / $mode.filterDenominator))
+        $btY = $totalY - $fwY
+
+        Write-Host ">>> [AUTO-FILTER] Inyectando Orquestador Maestro (EA: $eaName | BT: $btY | FW: $fwY | TF: $tf)..." -ForegroundColor Cyan
+        
+        $masterOrchestrator = Join-Path $root "Tools\script\B_Master_Filter_Post_Forward.py"
+        if(Test-Path $masterOrchestrator){
+            & $pyExe $masterOrchestrator $eaName $btY $fwY $tf
+            Write-Host ">>> [AUTO-FILTER] Orquestación completada." -ForegroundColor Green
         }
     }
 
