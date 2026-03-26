@@ -11,13 +11,19 @@ Compilacion/logs
 .venv
 RESULTADOS/
 
-# Ignorar el contenido de las carpetas BUILD
-BUILD/01_ea_construccion/*
-BUILD/02_ea_mejorar/*
-BUILD/04_ARCHIVADOS/*
+# Ignorar el contenido de las carpetas BUILD (Nueva Estructura 1_BUILDING)
+BUILD/1_BUILDING/01_ea_construccion/*
+BUILD/1_BUILDING/02_ea_mejorar/*
+BUILD/1_BUILDING/03_PORTAFOLIO/*
+BUILD/1_BUILDING/04_ARCHIVADOS/*
+BUILD/1_BUILDING/05_METRICAS_ELITES/*
+BUILD/RESULTADOS/*
 
-# EXCEPCIÓN: No ignorar los archivos .gitkeep para que la carpeta se mantenga en Git
-!BUILD/01_ea_construccion/.gitkeep
-!BUILD/02_ea_mejorar/.gitkeep
-!BUILD/03_PORTAFOLIO/.gitkeep
-!BUILD/04_ARCHIVADOS/.gitkeep
+# EXCEPCIÓN: No ignorar los archivos .gitkeep
+!BUILD/1_BUILDING/01_ea_construccion/.gitkeep
+!BUILD/1_BUILDING/02_ea_mejorar/.gitkeep
+!BUILD/1_BUILDING/03_PORTAFOLIO/.gitkeep
+!BUILD/1_BUILDING/04_ARCHIVADOS/.gitkeep
+!BUILD/1_BUILDING/05_METRICAS_ELITES/.gitkeep
+!BUILD/RESULTADOS/.gitkeep
+!BUILD/1_BUILDING/03_PORTAFOLIO/teoria_template.md
