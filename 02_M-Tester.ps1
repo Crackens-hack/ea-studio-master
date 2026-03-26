@@ -1,7 +1,11 @@
 # ======================================================
-# 02_M-Tester (v3)
-# Strategy Tester Engine para EA Studio
+# 02_M-Tester (v4) - PROTOCOLO FÉNIX
+# Strategy Tester Engine con Derivación Automática
 # ======================================================
+
+# Forzar Encoding UTF-8 para evitar problemas con 'años' y acentos
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 $root = $PSScriptRoot
 
@@ -68,6 +72,8 @@ function Get-Modes {
             $autoFilterPostFW=$false
             $filterNumerator=0
             $filterDenominator=1
+            $derivaPos=""
+            $derivaRange=""
 
             foreach($p in $parts){
 
@@ -87,6 +93,12 @@ function Get-Modes {
                     else {
                         $ranges+=$p
                     }
+                }
+
+                # Regex para {posicionN} o {posicionN:_rango}
+                if($p -match "^\{posicion(\d+)(?::(.+))?\}$"){
+                    $derivaPos=$matches[1]
+                    $derivaRange=$matches[2] # Captura el rango si existe (_12años)
                 }
 
                 if($p -eq "preset"){
@@ -110,6 +122,8 @@ function Get-Modes {
                 autoFilterPostFW=$autoFilterPostFW
                 filterNumerator=$filterNumerator
                 filterDenominator=$filterDenominator
+                derivaPos=$derivaPos
+                derivaRange=$derivaRange
                 fullTime=($parts -contains "Full_time")
             }
         }
@@ -194,146 +208,146 @@ if(-not $toDate){
 
 $modes=Get-Modes $config
 
-# -----------------------------------------------------
-# EAs
-# -----------------------------------------------------
+# Variables de Memoria de Sesión (Persistence)
+$sess_ea = $null
+$sess_mode = $null
+$sess_range = $null
+$sess_symbol = $null
+$sess_tf = $null
+$sess_model = $null
 
-$eas=Get-ChildItem $eaDir -Filter *.ex5
+while($true){
 
-if(-not $eas -or $eas.Count -eq 0){
-    Write-Host "No se encontraron EAs (.ex5) en $eaDir"
-    exit 1
-}
+    # -----------------------------------------------------
+    # SELECCION DE EA (SI NO HAY SESION)
+    # -----------------------------------------------------
+    if($null -eq $sess_ea){
+        $eas=Get-ChildItem $eaDir -Filter *.ex5
+        if(-not $eas -or $eas.Count -eq 0){
+            Write-Host "No se encontraron EAs (.ex5) en $eaDir"
+            exit 1
+        }
+        Write-Host ""
+        Write-Host "EAs disponibles"
+        $i=1
+        foreach($ea in $eas){
+            Write-Host "[$i] $($ea.Name)"
+            $i++
+        }
+        $sel=Read-Host "Elegí EA"
+        $eaIndex=0
+        if(-not [int]::TryParse($sel,[ref]$eaIndex) -or $eaIndex -lt 1 -or $eaIndex -gt $eas.Count){
+            Write-Host "Selección de EA inválida."
+            exit 1
+        }
+        $sess_ea=$eas[$eaIndex-1]
+    }
 
-Write-Host ""
-Write-Host "EAs disponibles"
+    $ea = $sess_ea
+    $eaName=[System.IO.Path]::GetFileNameWithoutExtension($ea.Name)
 
-$i=1
-foreach($ea in $eas){
+    # -----------------------------------------------------
+    # MODO (SI NO HAY SESION POR DERIVACION)
+    # -----------------------------------------------------
+    if($null -eq $sess_mode){
+        $sess_mode = Choose-FromList $modes "Modos disponibles"
+    }
+    $mode = $sess_mode
 
-Write-Host "[$i] $($ea.Name)"
-$i++
-}
+    # -----------------------------------------------------
+    # RANGO (SI NO HAY SESION)
+    # -----------------------------------------------------
+    if($null -eq $sess_range){
+        $ranges=@()
+        foreach($r in $mode.ranges){
+            $ranges+=[PSCustomObject]@{
+                name=$r
+                days=$config[$r]
+            }
+        }
+        Write-Host ""
+        Write-Host "Rangos disponibles para $($mode.name)"
+        $i=1
+        foreach($r in $ranges){
+            Write-Host "[$i] $($r.name) ($($r.days) días)"
+            $i++
+        }
+        $rsel=Read-Host "Elegí rango (número)"
+        $rangeIndex=0
+        if(-not [int]::TryParse($rsel,[ref]$rangeIndex) -or $rangeIndex -lt 1 -or $rangeIndex -gt $ranges.Count){
+            Write-Host "Selección de rango inválida."
+            exit 1
+        }
+        $sess_range = $ranges[$rangeIndex-1]
+    }
+    $range = $sess_range
 
-$sel=Read-Host "Elegí EA"
-$eaIndex=0
-
-if(-not [int]::TryParse($sel,[ref]$eaIndex) -or $eaIndex -lt 1 -or $eaIndex -gt $eas.Count){
-    Write-Host "Selección de EA inválida."
-    exit 1
-}
-
-$ea=$eas[$eaIndex-1]
-$eaName=[System.IO.Path]::GetFileNameWithoutExtension($ea.Name)
-
-# -----------------------------------------------------
-# MODO
-# -----------------------------------------------------
-
-$mode=Choose-FromList $modes "Modos disponibles"
-
-# -----------------------------------------------------
-# RANGO
-# -----------------------------------------------------
-
-$ranges=@()
-
-foreach($r in $mode.ranges){
-
-$ranges+=[PSCustomObject]@{
-name=$r
-days=$config[$r]
-}
-}
-
-Write-Host ""
-Write-Host "Rangos disponibles"
-
-$i=1
-foreach($r in $ranges){
-
-Write-Host "[$i] $($r.name) ($($r.days) días)"
-$i++
-}
-
-$rsel=Read-Host "Elegí rango"
-$rangeIndex=0
-
-if(-not [int]::TryParse($rsel,[ref]$rangeIndex) -or $rangeIndex -lt 1 -or $rangeIndex -gt $ranges.Count){
-    Write-Host "Selección de rango inválida."
-    exit 1
-}
-
-$range=$ranges[$rangeIndex-1]
-
-$toDate=$config["ToDate"]
-$days=0
-if(-not [int]::TryParse($range.days,[ref]$days) -or $days -le 0){
-    Write-Host "Valor de días inválido para el rango $($range.name): '$($range.days)'"
-    exit 1
-}
-$fromDate=Compute-FromDate $toDate $days
-
-# -----------------------------------------------------
-# INPUT USUARIO
-# -----------------------------------------------------
-
-$defaultSymbol = $config["DefaultSymbol"]
-if ([string]::IsNullOrWhiteSpace($defaultSymbol)) { $defaultSymbol = "EURUSD" }
-$symbol=Read-Host "Symbol (Enter $defaultSymbol)"
-if(!$symbol){$symbol=$defaultSymbol}
-
-$tf=Read-Host "Timeframe (Enter H1)"
-if(!$tf){$tf="H1"}
-
-$model=Read-Host "Model 0=tick 1=ohlc (Enter=1)"
-if(!$model){$model=1}
-
-# -----------------------------------------------------
-# PRESET
-# -----------------------------------------------------
-
-$set=""
-
-if($mode.preset){
-
-$set="$eaName.set"
-
-$preset=Join-Path $presetsDir $set
-$tester=Join-Path $testerDir $set
-
-if(Test-Path $preset){
-
-$presetContent = Get-Content $preset
-if(-not ($presetContent | Select-String -SimpleMatch ";archivo de configuracion")){
-    Write-Host "El preset en Presets/$set no contiene ';archivo de configuracion'. Abortando."
-    exit 1
-}
-
-$txt=$presetContent -join "`n"
-
-Set-Content $tester (";archivo movido por M-Tester`n"+$txt)
-
-Remove-Item $preset
-
-}
-elseif(-not (Test-Path $tester)){
-    Write-Host "Modo requiere preset y no se encontró $set ni en Presets ni en Profiles/Tester. Abortando."
-    exit 1
-}
-else {
-    # tester tiene algo; validar que sea un preset válido de agentes (no autosave)
-    $testerLines = Get-Content $tester
-    if($testerLines[0].Trim() -like "; saved automatically on*"){
-        Write-Host "Se halló $set en Profiles/Tester pero es un autosave ('; saved automatically on ...'). Abortando: se necesita un preset limpio en Presets."
+    $days=0
+    if(-not [int]::TryParse($range.days,[ref]$days) -or $days -le 0){
+        Write-Host "Valor de días inválido para el rango $($range.name): '$($range.days)'"
         exit 1
     }
-    if(-not ($testerLines | Select-String -SimpleMatch ";archivo de configuracion")){
-        Write-Host "Se halló $set en Profiles/Tester pero no contiene ';archivo de configuracion'. Abortando."
-        exit 1
+    $fromDate=Compute-FromDate $toDate $days
+
+
+    # -----------------------------------------------------
+    # INPUT USUARIO (SI NO HAY SESION)
+    # -----------------------------------------------------
+    if($null -eq $sess_symbol){
+        $defaultSymbol = $config["DefaultSymbol"]
+        if ([string]::IsNullOrWhiteSpace($defaultSymbol)) { $defaultSymbol = "EURUSD" }
+        $sess_symbol=Read-Host "Symbol (Enter $defaultSymbol)"
+        if(!$sess_symbol){$sess_symbol=$defaultSymbol}
     }
-}
-}
+    $symbol = $sess_symbol
+
+    if($null -eq $sess_tf){
+        $sess_tf = Read-Host "Timeframe (Enter H1)"
+        if(!$sess_tf){$sess_tf="H1"}
+    }
+    $tf = $sess_tf
+
+    if($null -eq $sess_model){
+        $sess_model = Read-Host "Model 0=tick 1=ohlc (Enter=1)"
+        if(!$sess_model){$sess_model=1}
+    }
+    $model = $sess_model
+
+    # -----------------------------------------------------
+    # PRESET
+    # -----------------------------------------------------
+    $set=""
+    if($mode.preset){
+        $set="$eaName.set"
+        $preset=Join-Path $presetsDir $set
+        $tester=Join-Path $testerDir $set
+
+        if(Test-Path $preset){
+            $presetContent = Get-Content $preset
+            if(-not ($presetContent | Select-String -SimpleMatch ";archivo de configuracion")){
+                Write-Host "El preset en Presets/$set no contiene ';archivo de configuracion'. Abortando."
+                exit 1
+            }
+            $txt=$presetContent -join "`n"
+            Set-Content $tester (";archivo movido por M-Tester`n"+$txt)
+            Remove-Item $preset
+        }
+        elseif(-not (Test-Path $tester)){
+            Write-Host "Modo requiere preset y no se encontró $set ni en Presets ni en Profiles/Tester. Abortando."
+            exit 1
+        }
+        else {
+            $testerLines = Get-Content $tester
+            if($testerLines[0].Trim() -like "; saved automatically on*"){
+                Write-Host "Se halló $set en Profiles/Tester pero es un autosave ('; saved automatically on ...'). Abortando."
+                exit 1
+            }
+            if(-not ($testerLines | Select-String -SimpleMatch ";archivo de configuracion")){
+                Write-Host "Se halló $set en Profiles/Tester pero no contiene ';archivo de configuracion'. Abortando."
+                exit 1
+            }
+        }
+    }
 
 # -----------------------------------------------------
 # REPORTE
@@ -557,11 +571,75 @@ while($true){
         }
     }
 
-    # Si NO es modo autocargador, terminamos el bucle tras la primera vuelta
+    # --- AUTO-FILTER MODO FRAGMENTADO (El Juez) ---
+    $globalFragFilter = $config["AutoFilter_MODO_FRAGMENTADO"] -eq "True"
+    if($globalFragFilter -and $mode.fragmentation){
+        
+        Write-Host ""
+        Write-Host ">>> [AUTO-FILTER-FRAG] Invocando al Juez Forense (Analista Fragmentado)..." -ForegroundColor Magenta
+        
+        $juezForense = Join-Path $root "Tools\script\D_Analista_Fragmentado.py"
+        if(Test-Path $juezForense){
+            & $pyExe $juezForense
+            Write-Host ">>> [AUTO-FILTER-FRAG] Auditoría completada." -ForegroundColor Green
+        }
+    }
+
+    # Si NO es modo autocargador, terminamos el bucle interno tras la primera vuelta
     if(-not $isAutoCargador){
         break
     }
+} # Fin del while($true) interno (Munición)
+
+# --- ¿CONTINUAR CON MODO DERIVADO (Eslabón)? ---
+$globalDeriva = $config["MODOS_AUTOMATICOS_DERIBADOS"] -eq "True"
+if($globalDeriva -and $mode.derivaPos){
+    $nextPosNum = $mode.derivaPos
+    Write-Host ""
+    Write-Host ">>> [DERIVACION] Detectado modo encadenado: Posicion $nextPosNum" -ForegroundColor Magenta
+    
+    # Buscar el objeto de modo correspondiente a esa posición
+    $nextMode = $modes | Where-Object { $_.pos -eq [int]$nextPosNum }
+    
+    if($nextMode){
+        $sess_mode = $nextMode
+        
+        # Reseteamos el rango para que tome el del nuevo modo (o el primero por defecto)
+        $sess_range = $null 
+        
+        # ¿Tiene un rango objetivo sugerido? (ej. {posicion5:_12años})
+        if($mode.derivaRange){
+            $target = $mode.derivaRange
+            if($sess_mode.ranges -contains $target){
+                $sess_range = [PSCustomObject]@{
+                    name=$target
+                    days=$config[$target]
+                }
+                Write-Host ">>> [DERIVACION] Aplicando Rango Objetivo: $target" -ForegroundColor Cyan
+            }
+        }
+
+        # Fallback: Si no hay sugerencia o no existe el rango objetivo, tomamos el primero
+        if($null -eq $sess_range -and $sess_mode.ranges.Count -gt 0){
+            $firstRangeTag = $sess_mode.ranges[0]
+            $sess_range = [PSCustomObject]@{
+                name=$firstRangeTag
+                days=$config[$firstRangeTag]
+            }
+            Write-Host ">>> [DERIVACION] Inyectando Rango automatico (Primer slot): $firstRangeTag" -ForegroundColor Cyan
+        }
+
+        Write-Host ">>> [DERIVACION] Reiniciando ciclo con el nuevo eslabon..." -ForegroundColor Green
+        continue # Reinicia el while($true) maestro
+    }
+    else {
+        Write-Host "[ERROR] No se encontro la posicion $nextPosNum para la derivacion." -ForegroundColor Red
+    }
 }
+
+# Si llega aqui es porque no hay mas derivaciones, salimos del bucle maestro
+break 
+} # Fin del while($true) maestro
 
 
 
