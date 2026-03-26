@@ -27,3 +27,7 @@ BUILD/RESULTADOS/*
 !BUILD/1_BUILDING/05_METRICAS_ELITES/.gitkeep
 !BUILD/RESULTADOS/.gitkeep
 !BUILD/1_BUILDING/03_PORTAFOLIO/teoria_template.md
+
+# Ignorar Binarios Continentales (MT5)
+00_setup/bin/*
+!00_setup/bin/.gitkeep
