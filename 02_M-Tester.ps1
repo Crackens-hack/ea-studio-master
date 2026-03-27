@@ -71,6 +71,7 @@ function Get-Modes {
             $autoCargador=$false
             $autoFilterPostFW=$false
             $autoFilterFrag=$false
+            $alistador=$false
             $filterNumerator=0
             $filterDenominator=1
             $derivaPos=""
@@ -85,6 +86,9 @@ function Get-Modes {
                     }
                     elseif($p -match "^_AutoCargador_$"){
                         $autoCargador=$true
+                    }
+                    elseif($p -match "^_Alistador_$"){
+                        $alistador=$true
                     }
                     elseif($p -match "^_Auto_Filter_Gen_For\[(\d+)/(\d+)\]_$"){
                         $autoFilterPostFW=$true
@@ -133,6 +137,7 @@ function Get-Modes {
                 filterDenominator=$filterDenominator
                 derivaPos=$derivaPos
                 derivaRange=$derivaRange
+                alistador=$alistador
                 fullTime=($parts -contains "Full_time")
             }
         }
@@ -610,6 +615,19 @@ while($true){
         break
     }
 } # Fin del while($true) interno (Munición)
+
+# --- ALISTADOR (Fuera del bucle, una sola vez) ---
+if($mode.alistador){
+    Write-Host ""
+    Write-Host ">>> [ALISTADOR] Consolidando Escuadrón Élite para $eaName..." -ForegroundColor Yellow
+    $alistadorPath = Join-Path $root "Tools\script\E_Alistador_Elite.py"
+    if(Test-Path $alistadorPath){
+        & $pyExe $alistadorPath $eaName
+        Write-Host ">>> [ALISTADOR] Escuadrón-Elite.csv generado." -ForegroundColor Green
+    } else {
+        Write-Host "[WARN] No se encontró E_Alistador_Elite.py en Tools\script." -ForegroundColor DarkYellow
+    }
+}
 
 # --- ¿CONTINUAR CON MODO DERIVADO (Eslabón)? ---
 $globalDeriva = $config["MODOS_AUTOMATICOS_DERIBADOS"] -eq "True"

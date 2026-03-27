@@ -79,9 +79,12 @@ def main():
     pass_dir = os.path.join(NORMALIZED, pass_folder_name, pass_id)
     resumen_path = os.path.join(pass_dir, '1_RESUMEN', 'resumen-fragmentacion.csv')
 
-    log_path = os.path.join(pass_dir, "resumen-auditacion-jueza.txt")
+    log_path = os.path.join(pass_dir, "sentencia-juez.csv")
     veredicto = "No"
     razon_final = ""
+    symbol_ctx  = "N/A"
+    tf_ctx      = "N/A"
+    linealidad  = 0.0
 
     print(f"\n👨‍⚖️  AUDITORÍA DE ÉLITE: {ea_name} (Pass {pass_id})")
     print("-" * 40)
@@ -100,10 +103,17 @@ def main():
                 ft = df.iloc[0]
                 fragments = df.iloc[1:]
 
+                # --- Contexto de mercado (Symbol y Timeframe) ---
+                symbol_raw  = str(ft.get('simbolo', 'N/A'))
+                periodo_raw = str(ft.get('periodo', 'N/A'))
+                symbol_ctx  = symbol_raw.strip() if symbol_raw != 'nan' else 'N/A'
+                # Extraer solo la parte del TF (ej: "M15" de "M15 (2014...2026)")
+                tf_ctx = periodo_raw.split(' ')[0] if ' ' in periodo_raw else periodo_raw
+
                 profit_total = clean_val(ft.get('beneficio_neto', 0.0))
                 pf_total     = clean_val(ft.get('factor_de_beneficio', 0.0))
                 dd_total     = clean_val(ft.get('dd_equidad_maximo_pct', 0.0))
-                
+
                 # Nuevas metricas sugeridas
                 sharpe      = clean_val(ft.get('ratio_sharpe', 0.0))
                 rf          = clean_val(ft.get('factor_de_recuperacion', 0.0))
@@ -200,7 +210,7 @@ def main():
 
                         veredicto = "Yes"
                         razon_final = (
-                            f"ÉLITE CERTIFICADO. Sometido a {num_anyos} fragmentos anuales.\n"
+                            f"ÉLITE CERTIFICADO. {symbol_ctx} | {tf_ctx}. Sometido a {num_anyos} fragmentos anuales.\n"
                             f"ESTADO: {perfil}\n"
                             f"[Métricas Full-Time: Profit ${profit_total:.2f} (PF {pf_total:.2f}) | DD {dd_total:.2f}% | RF {rf:.2f} | Sharpe {sharpe:.2f}]\n"
                             f"[Perfil Táctico: WinRate Avg {avg_wr:.1f}% (Peor {worst_wr:.1f}%) | Ratio R/R {ratio_rr:.2f} | Linealidad LR {linealidad:.2f}]\n"
@@ -214,9 +224,19 @@ def main():
         except Exception as e:
             razon_final = f"Error Analisis: {str(e)}"
 
-    # Finalizar Veredicto en Texto
+    # Finalizar Veredicto en CSV
+    csv_header = "ea;pass;symbol;tf;seleccionado;perfil;profit;pf;dd_pct;sharpe;linealidad;rf;winrate_avg;ratio_rr;estabilidad_anual;avg_profit_mes;cadencia;worst_yr_profit;worst_yr_dd"
+    csv_values = (
+        f"{ea_name};{pass_id};{symbol_ctx};{tf_ctx};{veredicto};"
+        f"{perfil};{profit_total:.2f};{pf_total:.2f};{dd_total:.2f};"
+        f"{sharpe:.2f};{linealidad:.2f};{rf:.2f};{avg_wr:.1f};"
+        f"{ratio_rr:.2f};{estabilidad:.1f};{avg_profit_mes:.2f};"
+        f"{avg_anual:.1f};{worst_profit:.2f};{max_y_dd:.2f}"
+    )
+
     with open(log_path, 'w', encoding='utf-8') as f:
-        f.write(f"ea={ea_name}\npass={pass_id}\nseleccionado={veredicto}\nresumenn={razon_final}\n")
+        f.write(f"{csv_header}\n")
+        f.write(f"{csv_values}\n")
 
     print(f"VEREDICTO: {veredicto}")
     print(f"MOTIVO: {razon_final}")
@@ -238,7 +258,7 @@ def main():
             
             # Copiar también el resumen-fragmentacion.csv y el acta del Juez dentro de la carpeta Elite
             shutil.copy2(resumen_path, os.path.join(dest_pass_dir, "resumen-fragmentacion-verificado.csv"))
-            shutil.copy2(log_path, os.path.join(dest_pass_dir, "sentencia-juez.txt"))
+            shutil.copy2(log_path, os.path.join(dest_pass_dir, "sentencia-juez.csv"))
             
             print(f"   🚀 Cartucho extraído y promovido a PASS_ELITE_{pass_id}")
         else:
