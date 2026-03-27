@@ -182,6 +182,7 @@ def main():
                         avg_profit_mes = profit_total / num_meses if num_meses > 0 else 0
                         
                         avg_anual      = sum(trades_por_anyo) / len(trades_por_anyo) if trades_por_anyo else 0
+                        avg_mensual    = avg_anual / 12  # cadencia mensual calculada
                         avg_profit_an  = sum(profits_por_anyo) / len(profits_por_anyo) if profits_por_anyo else 0
                         avg_pf         = sum(pfs_por_anyo) / len(pfs_por_anyo) if pfs_por_anyo else 0
                         avg_wr         = sum(wr_por_anyo) / len(wr_por_anyo) if wr_por_anyo else 0
@@ -216,7 +217,7 @@ def main():
                             f"[Perfil Táctico: WinRate Avg {avg_wr:.1f}% (Peor {worst_wr:.1f}%) | Ratio R/R {ratio_rr:.2f} | Linealidad LR {linealidad:.2f}]\n"
                             f"[Vigilancia Margen: Corr MAE {corr_mae:.2f} | Max Losing Streak: {max_losing} trades | Error LR {error_lr:.2f}]\n"
                             f"[Consistencia: PF Promedio {avg_pf:.2f} | Estabilidad Anual {estabilidad:.1f}% | Z-Score {z_score:.2f}]\n"
-                            f"[Escalabilidad: ${avg_profit_mes:.2f} / mes | Cadencia {avg_anual:.1f} trades/año]\n"
+                            f"[Escalabilidad: ${avg_profit_mes:.2f} / mes | Cadencia {avg_anual:.1f} trades/año | {avg_mensual:.1f} trades/mes]\n"
                             f"[Estrés Histórico: Peor Año Profit ${worst_profit:.2f} | Peor Año DD {max_y_dd:.2f}%].\n"
                             f"Supervivencia 100% confirmada sin ruina anual."
                         )
@@ -225,13 +226,13 @@ def main():
             razon_final = f"Error Analisis: {str(e)}"
 
     # Finalizar Veredicto en CSV
-    csv_header = "ea;pass;symbol;tf;seleccionado;perfil;profit;pf;dd_pct;sharpe;linealidad;rf;winrate_avg;ratio_rr;estabilidad_anual;avg_profit_mes;cadencia;worst_yr_profit;worst_yr_dd"
+    csv_header = "ea;pass;symbol;tf;seleccionado;perfil;profit;pf;dd_pct;sharpe;linealidad;rf;winrate_avg;ratio_rr;estabilidad_anual;avg_profit_mes;cadencia_anual;cadencia_mensual;worst_yr_profit;worst_yr_dd"
     csv_values = (
         f"{ea_name};{pass_id};{symbol_ctx};{tf_ctx};{veredicto};"
         f"{perfil};{profit_total:.2f};{pf_total:.2f};{dd_total:.2f};"
         f"{sharpe:.2f};{linealidad:.2f};{rf:.2f};{avg_wr:.1f};"
         f"{ratio_rr:.2f};{estabilidad:.1f};{avg_profit_mes:.2f};"
-        f"{avg_anual:.1f};{worst_profit:.2f};{max_y_dd:.2f}"
+        f"{avg_anual:.1f};{avg_mensual:.1f};{worst_profit:.2f};{max_y_dd:.2f}"
     )
 
     with open(log_path, 'w', encoding='utf-8') as f:
